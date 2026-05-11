@@ -1,52 +1,101 @@
-# HyperMemory
+<p align="center">
+  <a href="#readme">English</a>
+</p>
 
-HyperMemory is a memory-enhanced AI knowledge system built from the final version of the Campus QA evolution. It is positioned as a general-purpose product foundation rather than a campus-only demo.
+<h1 align="center">HyperMemory</h1>
 
-## What It Includes
+<p align="center">
+  <em>"A memory operating layer for AI knowledge systems."</em>
+</p>
 
-- RAG document ingestion and retrieval.
-- Agent-style question answering.
-- LLM Wiki memory.
-- GBrain skill concepts.
-- Hierarchy memory.
-- Hyper memory.
-- Vue 3 chat and upload frontend.
-- Docker Compose deployment stack.
+<p align="center">
+  <img alt="Java 17" src="https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white">
+  <img alt="Spring Boot" src="https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?logo=springboot&logoColor=white">
+  <img alt="Vue 3" src="https://img.shields.io/badge/Vue-3-42B883?logo=vuedotjs&logoColor=white">
+  <img alt="Agent" src="https://img.shields.io/badge/Agent-Tool%20Calling-5B5FC7">
+  <img alt="Memory" src="https://img.shields.io/badge/Memory-Hierarchy%20%2B%20Hyper-111827">
+  <img alt="Docker" src="https://img.shields.io/badge/Run-Docker%20Compose-2496ED?logo=docker&logoColor=white">
+</p>
 
-## Stack
+<p align="center">
+  HyperMemory is the product-oriented final system evolved from CampusRAG-QA. It is no longer limited to campus scenarios.
+</p>
 
-- Java 17
-- Spring Boot 3.3.0
-- LangChain4j
-- MySQL
-- Redis
-- Milvus
-- MinIO
-- Vue 3
-- Vite
+![HyperMemory dashboard](docs/assets/screenshots/hypermemory-dashboard.png)
 
-## Run
+## Product Scope
+
+HyperMemory combines several AI knowledge system patterns in one runnable project:
+
+| Layer | Capability |
+| --- | --- |
+| RAG | Upload documents, create embeddings, retrieve context, answer with an LLM. |
+| Agent | Route questions through tool-aware agent logic. |
+| LLM Wiki | Turn uploaded knowledge into wiki-like memory pages. |
+| GBrain | Add a skill-oriented layer on top of wiki memory. |
+| Hierarchy Memory | Combine wiki content with conversation memory. |
+| Hyper Memory | Final aggregation layer for longer-lived memory behavior. |
+
+## Screenshots
+
+| Desktop | Mode selection |
+| --- | --- |
+| ![Desktop](docs/assets/screenshots/hypermemory-dashboard.png) | ![Hyper mode](docs/assets/screenshots/hypermemory-mode.png) |
+
+| Mobile |
+| --- |
+| ![Mobile](docs/assets/screenshots/hypermemory-mobile.png) |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    User[User] --> UI[Vue 3 UI]
+    UI --> API[Spring Boot API]
+    API --> RAG[RAG Service]
+    API --> Agent[Agent Service]
+    API --> Wiki[LLM Wiki]
+    API --> GBrain[GBrain Skills]
+    API --> Hierarchy[Hierarchy Memory]
+    API --> Hyper[Hyper Memory]
+    RAG --> Milvus[(Milvus)]
+    API --> MinIO[(MinIO)]
+    API --> MySQL[(MySQL)]
+    API --> Redis[(Redis)]
+    API --> Model[OpenAI-compatible model]
+```
+
+## Quick Start
 
 ```bash
-docker compose up -d
+cp .env.example .env
+docker compose up -d --build
 ```
 
-Open the frontend at `http://localhost:3000`.
+Open:
 
-The backend runs on `http://localhost:8080`.
+- Frontend: `http://localhost:3000`
+- Backend health: `http://localhost:8080/actuator/health`
+- MinIO console: `http://localhost:9001`
 
-## Configuration
+Set `OPENAI_API_KEY` in `.env` before expecting real model answers.
 
-The sample config uses a dummy OpenAI key. Set a real API key before using the model-backed chat flows:
+## Production-Oriented Defaults
 
-```yaml
-openai:
-  api-key: your-key
-```
+- Vite entrypoint is present through `frontend/index.html`.
+- Nginx serves the SPA and proxies `/api` to Spring Boot.
+- Runtime secrets and ports are externalized through `.env`.
+- Docker Compose has service health checks.
+- Spring Boot exposes actuator health probes.
+- Upload size is configured for larger knowledge files.
 
-or update `OPENAI_API_KEY` in `docker-compose.yml`.
+See [Operations Guide](docs/OPERATIONS.md) for mode endpoints, configuration, and hardening notes.
 
-## Notes
+## Roadmap
 
-This codebase is a runnable product prototype. The next production steps are proper document chunking, durable memory persistence, real streaming, multi-tenant isolation, stronger retrieval, observability, and authentication.
-
+- Durable memory storage for wiki, hierarchy, and hyper memory.
+- Real streaming token output instead of single-event SSE.
+- Multi-tenant workspaces and role-based access control.
+- Source-grounded answers with citations.
+- Background skill scheduling and audit trail.
+- Evaluation suite for retrieval quality and memory quality.
