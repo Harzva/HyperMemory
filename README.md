@@ -36,6 +36,8 @@ HyperMemory combines several AI knowledge system patterns in one runnable projec
 | Hierarchy Memory | Combine wiki content with conversation memory. |
 | Hyper Memory | Final aggregation layer for longer-lived memory behavior. |
 
+Current RAG retrieval stores each text chunk in MySQL, indexes chunk IDs in Milvus, and hydrates real source text before prompting the model.
+
 ## Screenshots
 
 | Desktop | Mode selection |

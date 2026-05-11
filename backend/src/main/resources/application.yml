@@ -30,6 +30,8 @@ minio:
 
 openai:
   api-key: ${OPENAI_API_KEY:dummy}
+  chat-model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+  embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
 
 server:
   port: ${SERVER_PORT:8080}

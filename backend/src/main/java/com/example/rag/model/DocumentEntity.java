@@ -38,6 +38,10 @@ public class DocumentEntity {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    /** Number of text chunks created during ingestion. */
+    @Column(name = "chunk_count", nullable = false)
+    private int chunkCount;
+
     public Long getId() {
         return id;
     }
@@ -76,5 +80,13 @@ public class DocumentEntity {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getChunkCount() {
+        return chunkCount;
+    }
+
+    public void setChunkCount(int chunkCount) {
+        this.chunkCount = chunkCount;
     }
 }
