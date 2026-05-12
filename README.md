@@ -16,6 +16,8 @@
   <a href="#quick-start">Quick Start</a> |
   <a href="docs/OPERATIONS.md">Operations</a> |
   <a href="docs/PRODUCTION-ARCHITECTURE.md">Architecture</a> |
+  <a href="docs/PRODUCTION-GAPS.md">Production Gaps</a> |
+  <a href="docs/MAINTENANCE.md">Maintenance</a> |
   <a href="docs/BOT-INTEGRATION.md">Bot Integration</a> |
   <a href="docs/OPEN_SOURCE_REFERENCES.md">References</a>
 </p>
@@ -56,13 +58,17 @@ HyperMemory is the final repository in the Campus QA family. It keeps the useful
 | Hyper | `/api/hyper/chat` | Final aggregation layer for the demo. |
 | Bot Gateway | `/api/bot/{channel}/callback` | Routes normalized Feishu, DingTalk, and WeChat messages. |
 
-## Frontend Preview
+## Visual Walkthrough
 
-The README includes the actual UI surface so visitors can evaluate the product feel before running Docker.
+Six README-owned screenshots show the runnable workbench across final memory modes, production readiness, and mobile layout.
 
-| Desktop | Mode selection | Mobile |
+| Dashboard | Hierarchy mode | Agent mode |
 | --- | --- | --- |
-| <img src="docs/assets/screenshots/hypermemory-dashboard.png" alt="HyperMemory desktop" width="320"> | <img src="docs/assets/screenshots/hypermemory-mode.png" alt="HyperMemory mode switch" width="320"> | <img src="docs/assets/screenshots/hypermemory-mobile.png" alt="HyperMemory mobile" width="180"> |
+| <img src="docs/assets/screenshots/hypermemory-dashboard.png" alt="HyperMemory dashboard" width="300"> | <img src="docs/assets/screenshots/hypermemory-mode.png" alt="HyperMemory hierarchy mode" width="300"> | <img src="docs/assets/screenshots/hypermemory-agent.png" alt="HyperMemory Agent mode" width="300"> |
+
+| GBrain conversation | Production readiness | Mobile |
+| --- | --- | --- |
+| <img src="docs/assets/screenshots/hypermemory-gbrain-conversation.png" alt="HyperMemory GBrain conversation" width="300"> | <img src="docs/assets/screenshots/hypermemory-readiness.png" alt="HyperMemory production readiness" width="300"> | <img src="docs/assets/screenshots/hypermemory-mobile.png" alt="HyperMemory mobile" width="160"> |
 
 ## Architecture
 
@@ -113,14 +119,18 @@ frontend/             Vue 3 workbench
 docs/assets/          README screenshots
 docs/OPERATIONS.md    Runtime and endpoint notes
 docs/PRODUCTION-ARCHITECTURE.md
+docs/PRODUCTION-GAPS.md
+docs/MAINTENANCE.md
 docs/BOT-INTEGRATION.md
+docs/SCREENSHOTS.md
 docs/openapi/          API contract templates
 deploy/k8s/            Kubernetes deployment template
 docs/PRODUCTION-REVIEW.md
+SECURITY.md            Security policy and secret-handling notes
 docker-compose.yml    Full local runtime stack
 .env.example          Runtime configuration template
 ```
 
 ## Production Readiness
 
-See [Production Review](docs/PRODUCTION-REVIEW.md) for the detailed audit. The largest remaining decision is whether the final HyperMemory runtime should collapse to SQLite-only retrieval, as originally intended, or keep the current MySQL/Milvus/MinIO Docker stack.
+See [Production Review](docs/PRODUCTION-REVIEW.md) and [Production Gaps](docs/PRODUCTION-GAPS.md) for the detailed audit. The largest remaining decisions are durable memory persistence, tenant isolation, Bot idempotency, and whether final retrieval should collapse to SQLite-only or keep the current MySQL/Milvus/MinIO stack.

@@ -16,8 +16,11 @@ WORKDIR /app
 
 # Copy the built jar from the build stage
 COPY --from=build /workspace/target/campus-rag-backend-0.1.0-SNAPSHOT.jar app.jar
+RUN useradd --system --uid 10001 --home-dir /app appuser && chown -R appuser /app
+USER appuser
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
 
 # Expose the application port
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
