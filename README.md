@@ -13,9 +13,11 @@
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick Start</a> ·
-  <a href="docs/OPERATIONS.md">Operations</a> ·
-  <a href="docs/PRODUCTION-REVIEW.md">Production Review</a>
+  <a href="#quick-start">Quick Start</a> |
+  <a href="docs/OPERATIONS.md">Operations</a> |
+  <a href="docs/PRODUCTION-ARCHITECTURE.md">Architecture</a> |
+  <a href="docs/BOT-INTEGRATION.md">Bot Integration</a> |
+  <a href="docs/OPEN_SOURCE_REFERENCES.md">References</a>
 </p>
 
 <p align="center">
@@ -52,6 +54,7 @@ HyperMemory is the final repository in the Campus QA family. It keeps the useful
 | GBrain | `/api/gbrain/chat` | Skill layer over wiki memory. |
 | Hierarchy | `/api/hierarchy/chat` | Wiki plus conversation context. |
 | Hyper | `/api/hyper/chat` | Final aggregation layer for the demo. |
+| Bot Gateway | `/api/bot/{channel}/callback` | Routes normalized Feishu, DingTalk, and WeChat messages. |
 
 ## Frontend Preview
 
@@ -66,7 +69,9 @@ The README includes the actual UI surface so visitors can evaluate the product f
 ```mermaid
 flowchart LR
     User["Browser"] --> UI["Vue 3 Workbench"]
+    Bot["Feishu / DingTalk / WeChat"] --> Gateway["Bot Gateway"]
     UI --> API["Spring Boot API"]
+    Gateway --> API
     API --> RAG["RAG Service"]
     API --> Agent["Agent Service"]
     API --> Wiki["Wiki Facade"]
@@ -107,6 +112,10 @@ backend/              Spring Boot API and memory services
 frontend/             Vue 3 workbench
 docs/assets/          README screenshots
 docs/OPERATIONS.md    Runtime and endpoint notes
+docs/PRODUCTION-ARCHITECTURE.md
+docs/BOT-INTEGRATION.md
+docs/openapi/          API contract templates
+deploy/k8s/            Kubernetes deployment template
 docs/PRODUCTION-REVIEW.md
 docker-compose.yml    Full local runtime stack
 .env.example          Runtime configuration template

@@ -2,6 +2,7 @@ package com.example.rag.controller;
 
 import com.example.rag.dto.ChatRequest;
 import com.example.rag.service.HierarchyMemoryService;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,7 +27,7 @@ public class HierarchyChatController {
     }
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<Flux<String>> chat(@RequestBody ChatRequest request) {
+    public ResponseEntity<Flux<String>> chat(@Valid @RequestBody ChatRequest request) {
         String userMessage = "User: " + request.getUserInput();
         // store user message
         hierarchyMemoryService.rememberMessage(userMessage);

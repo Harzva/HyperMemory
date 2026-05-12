@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hypermemory-secrets
+type: Opaque
+stringData:
+  OPENAI_API_KEY: replace-me
+  MYSQL_ROOT_PASSWORD: replace-me
+  MINIO_ROOT_PASSWORD: replace-me
+  BOT_SIGNING_SECRET: replace-me-long-random-secret
+  BOT_FEISHU_VERIFICATION_TOKEN: replace-me
+  BOT_FEISHU_SIGNING_SECRET: replace-me
+  BOT_DINGTALK_TOKEN: replace-me
+  BOT_DINGTALK_SIGNING_SECRET: replace-me
+  BOT_WECHAT_TOKEN: replace-me
+  BOT_WECHAT_SIGNING_SECRET: replace-me
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hypermemory-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hypermemory-backend
+  template:
+    metadata:
+      labels:
+        app: hypermemory-backend
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/harzva/hypermemory-backend:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SERVER_PORT
+              value: "8080"
+            - name: BOT_ENABLED
+              value: "true"
+            - name: BOT_DEFAULT_MODE
+              value: hyper
+            - name: BOT_FEISHU_ENABLED
+              value: "true"
+            - name: BOT_DINGTALK_ENABLED
+              value: "true"
+            - name: BOT_WECHAT_ENABLED
+              value: "true"
+            - name: BOT_FEISHU_ALLOWED_MODES
+              value: rag,wiki,agent,gbrain,hierarchy,hyper
+            - name: BOT_DINGTALK_ALLOWED_MODES
+              value: rag,wiki,agent,gbrain,hierarchy,hyper
+            - name: BOT_WECHAT_ALLOWED_MODES
+              value: rag,wiki,agent,gbrain,hierarchy,hyper
+          envFrom:
+            - secretRef:
+                name: hypermemory-secrets
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hypermemory-backend
+spec:
+  selector:
+    app: hypermemory-backend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

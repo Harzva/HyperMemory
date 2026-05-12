@@ -15,6 +15,8 @@ HyperMemory is the final repository in the set. It should eventually collapse th
 | GBrain | Replaced placeholder console skills with deterministic inspection skills and structured names. |
 | Documentation | Added operations notes, architecture map, and an honest production checklist. |
 | CI | Added GitHub Actions jobs for frontend build and backend Maven tests. |
+| Bot integration | Added a disabled-by-default Bot gateway for Feishu, DingTalk, and WeChat adapters. |
+| Observability | Added Prometheus metrics exposure and graceful shutdown settings. |
 
 ## Highest-Impact Next Work
 
@@ -24,6 +26,7 @@ HyperMemory is the final repository in the set. It should eventually collapse th
 | P0 | Decide on SQLite-only final runtime | This is the main architectural fork from the current Docker stack. |
 | P1 | Persist memory state durably | Wiki, hierarchy, and hyper memory should survive restarts. |
 | P1 | Add source citations and retrieval traces | Production answers must be auditable. |
+| P1 | Add Bot idempotency storage | Prevents duplicate platform retries from creating duplicate model calls. |
 | P2 | Expand CI with Docker Compose smoke tests | Verifies the whole runtime, not only builds. |
 
 ## Known Tradeoffs

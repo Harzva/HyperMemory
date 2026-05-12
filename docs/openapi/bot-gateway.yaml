@@ -1,0 +1,111 @@
+openapi: 3.0.3
+info:
+  title: HyperMemory Bot Gateway
+  version: 0.1.0
+  description: Normalized Bot callback API for Feishu, DingTalk, and WeChat adapters.
+paths:
+  /api/bot/{channel}/callback:
+    post:
+      summary: Receive a normalized Bot message
+      parameters:
+        - name: channel
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [feishu, dingtalk, wechat]
+        - name: X-Bot-Timestamp
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Bot-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BotMessageRequest'
+      responses:
+        '200':
+          description: Routed Bot answer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BotMessageResponse'
+        '400':
+          description: Invalid payload or unsupported mode
+        '401':
+          description: Invalid token or signature
+        '403':
+          description: Mode not allowed for this channel
+  /api/bot/wechat/callback:
+    get:
+      summary: Verify WeChat callback URL
+      parameters:
+        - name: signature
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: timestamp
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: nonce
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: echostr
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Echo string returned to WeChat
+components:
+  schemas:
+    BotMessageRequest:
+      type: object
+      required: [text]
+      properties:
+        tenantId:
+          type: string
+          maxLength: 128
+        conversationId:
+          type: string
+          maxLength: 128
+        senderId:
+          type: string
+          maxLength: 128
+        messageId:
+          type: string
+          maxLength: 128
+        mode:
+          type: string
+          enum: [rag, wiki, agent, gbrain, hierarchy, hyper]
+        text:
+          type: string
+          maxLength: 4000
+    BotMessageResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        channel:
+          type: string
+        conversationId:
+          type: string
+        mode:
+          type: string
+        answer:
+          type: string
+        error:
+          type: string
