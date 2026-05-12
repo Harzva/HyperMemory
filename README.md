@@ -26,6 +26,14 @@
   <img src="docs/assets/screenshots/hypermemory-dashboard.png" alt="HyperMemory frontend preview" width="920">
 </p>
 
+## Architecture Framework
+
+<p align="center">
+  <img src="docs/assets/architecture/hypermemory-architecture.png" alt="HyperMemory architecture framework" width="920">
+</p>
+
+> This image is an ImageGen-rendered visual architecture map. The Mermaid diagram and OpenAPI docs remain the exact engineering contract.
+
 ## Position
 
 HyperMemory is the final repository in the Campus QA family. It keeps the useful ideas from RAG, Agent, LLM Wiki, GBrain, hierarchy memory, and hyper memory in one runnable project while making the remaining production gaps explicit.
