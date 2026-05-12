@@ -76,7 +76,7 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.5.3</version>
+            <version>9.0.0</version>
         </dependency>
 
         <dependency>
