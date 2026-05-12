@@ -23,8 +23,7 @@ The image above is an ImageGen-rendered visual map for team review. The Mermaid 
 | `wiki` | `/api/wiki/chat` | Wiki-style QA over the same retrieval core. |
 | `agent` | `/api/agent/chat` | Tool-using campus assistant. |
 | `gbrain` | `/api/gbrain/chat` | Skill layer over wiki memory. |
-| `hierarchy` | `/api/hierarchy/chat` | Wiki plus conversation memory. |
-| `hyper` | `/api/hyper/chat` | Final aggregation mode for the demo. |
+| `hyper` | `/api/hyper/chat` | Final conversation-memory aggregation over wiki context. |
 | `bot` | `/api/bot/{channel}/callback` | Normalized Feishu, DingTalk, and WeChat Bot entrypoint. |
 
 ## Architecture
@@ -42,19 +41,16 @@ flowchart LR
     API --> WIKI["LLMWikiService"]
     API --> AG["AgentService"]
     API --> GB["GBrainService"]
-    API --> HM["HierarchyMemoryService"]
     API --> HYP["HyperMemoryService"]
     BGS --> RAG
     BGS --> WIKI
     BGS --> AG
     BGS --> GB
-    BGS --> HM
     BGS --> HYP
     RAG --> RET["RetrievalContextService"]
     WIKI --> RET
     AG --> RET
     GB --> WIKI
-    HM --> WIKI
     HYP --> WIKI
     RET --> VEC[("Milvus vectors")]
     RET --> DB[("MySQL chunks")]
@@ -74,8 +70,7 @@ flowchart LR
 | `service/BotGatewayService` | Mode routing from Bot messages | Enforces per-channel allowed modes. |
 | `service/AgentService` | Tool-using assistant | Keep tools deterministic and grounded by retrieval. |
 | `service/GBrainService` | Skill-oriented layer | Good place for scheduled inspection and maintenance jobs. |
-| `service/HierarchyMemoryService` | Conversation memory layer | Replace in-memory state with tenant-scoped persistence before heavy production use. |
-| `service/HyperMemoryService` | Final aggregation layer | Good candidate for the future SQLite-only compact implementation. |
+| `service/HyperMemoryService` | Final conversation-memory aggregation layer | Good candidate for the future SQLite-only compact implementation. |
 | `service/RetrievalContextService` | Retrieval abstraction | Keep as the only place that hydrates vector results into source text. |
 | `exception/ApiExceptionHandler` | Stable JSON error envelope | Prevents stack traces or secret leaks in API responses. |
 
@@ -137,7 +132,7 @@ Body:
 | Invalid payload | DTO validation and stable 400 response. |
 | Unsupported mode | Per-channel allowed mode list. |
 | Agent tool drift | Tools call retrieval instead of hardcoded FAQ logic. |
-| Volatile memory state | Persist hierarchy and hyper memory before heavy production use. |
+| Volatile memory state | Persist HyperMemory state before heavy production use. |
 | LLM or vector store latency | Put Bot platform retries behind an edge queue; add response timeout in gateway. |
 | Service restart | Docker restart policies, health probes, and graceful shutdown. |
 

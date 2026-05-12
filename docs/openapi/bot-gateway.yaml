@@ -90,7 +90,7 @@ components:
           maxLength: 128
         mode:
           type: string
-          enum: [rag, wiki, agent, gbrain, hierarchy, hyper]
+          enum: [rag, wiki, agent, gbrain, hyper]
         text:
           type: string
           maxLength: 4000

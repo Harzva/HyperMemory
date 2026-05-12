@@ -14,7 +14,7 @@ flowchart LR
     Normalize --> Sign["Internal HMAC signing"]
     Sign --> API["/api/bot/{channel}/callback"]
     API --> Route["BotGatewayService"]
-    Route --> Mode["rag / wiki / agent / gbrain / hierarchy / hyper"]
+    Route --> Mode["rag / wiki / agent / gbrain / hyper"]
 ```
 
 The edge adapter can be a small Node.js, Go, Python, or serverless service. Its job is to handle platform-specific payloads and forward a normalized JSON request to this backend.
@@ -28,15 +28,15 @@ BOT_SIGNING_SECRET=replace-with-32-byte-random-secret
 BOT_FEISHU_ENABLED=true
 BOT_FEISHU_VERIFICATION_TOKEN=replace-me
 BOT_FEISHU_SIGNING_SECRET=replace-me
-BOT_FEISHU_ALLOWED_MODES=rag,wiki,agent,gbrain,hierarchy,hyper
+BOT_FEISHU_ALLOWED_MODES=rag,wiki,agent,gbrain,hyper
 BOT_DINGTALK_ENABLED=true
 BOT_DINGTALK_TOKEN=replace-me
 BOT_DINGTALK_SIGNING_SECRET=replace-me
-BOT_DINGTALK_ALLOWED_MODES=rag,wiki,agent,gbrain,hierarchy,hyper
+BOT_DINGTALK_ALLOWED_MODES=rag,wiki,agent,gbrain,hyper
 BOT_WECHAT_ENABLED=true
 BOT_WECHAT_TOKEN=replace-me
 BOT_WECHAT_SIGNING_SECRET=replace-me
-BOT_WECHAT_ALLOWED_MODES=rag,wiki,agent,gbrain,hierarchy,hyper
+BOT_WECHAT_ALLOWED_MODES=rag,wiki,agent,gbrain,hyper
 ```
 
 ## Feishu

@@ -1,7 +1,7 @@
 <h1 align="center">HyperMemory</h1>
 
 <p align="center">
-  Final memory-enhanced AI knowledge system combining <strong>RAG</strong>, <strong>Agent</strong>, <strong>Wiki</strong>, <strong>GBrain</strong>, hierarchy memory, and hyper memory.
+  Final memory-enhanced AI knowledge system combining <strong>RAG</strong>, <strong>Agent</strong>, <strong>Wiki</strong>, <strong>GBrain</strong>, and hyper memory.
 </p>
 
 <p align="center">
@@ -36,7 +36,7 @@
 
 ## Position
 
-HyperMemory is the final repository in the Campus QA family. It keeps the useful ideas from RAG, Agent, LLM Wiki, GBrain, hierarchy memory, and hyper memory in one runnable project while making the remaining production gaps explicit.
+HyperMemory is the final repository in the Campus QA family. It keeps the useful ideas from RAG, Agent, LLM Wiki, GBrain, and hyper memory in one runnable project while making the remaining production gaps explicit.
 
 | Repository | Role |
 | --- | --- |
@@ -51,6 +51,7 @@ HyperMemory is the final repository in the Campus QA family. It keeps the useful
 | Demo-like frontend title and layout | Product-specific workbench with real mode names. |
 | Hardcoded Agent FAQ answers | Agent relies on retrieval tools for knowledge answers. |
 | Wiki mode dumped stored pages first | Wiki mode queries the shared retrieval core first. |
+| Duplicated interim/final memory layers | HyperMemory is the single conversation-memory aggregation layer. |
 | Placeholder GBrain console examples | Deterministic inspection skills with structured names. |
 | README described production as if finished | README and production review separate what is done from what remains. |
 
@@ -62,17 +63,16 @@ HyperMemory is the final repository in the Campus QA family. It keeps the useful
 | Agent | `/api/agent/chat` | Tool-using QA over the same retrieval core. |
 | LLM Wiki | `/api/wiki/chat` | Wiki-style memory over retrieved chunks. |
 | GBrain | `/api/gbrain/chat` | Skill layer over wiki memory. |
-| Hierarchy | `/api/hierarchy/chat` | Wiki plus conversation context. |
-| Hyper | `/api/hyper/chat` | Final aggregation layer for the demo. |
+| Hyper | `/api/hyper/chat` | Final conversation-memory aggregation over wiki context. |
 | Bot Gateway | `/api/bot/{channel}/callback` | Routes normalized Feishu, DingTalk, and WeChat messages. |
 
 ## Visual Walkthrough
 
 Six README-owned screenshots show the runnable workbench across final memory modes, production readiness, and mobile layout.
 
-| Dashboard | Hierarchy mode | Agent mode |
+| Dashboard | Hyper mode | Agent mode |
 | --- | --- | --- |
-| <img src="docs/assets/screenshots/hypermemory-dashboard.png" alt="HyperMemory dashboard" width="300"> | <img src="docs/assets/screenshots/hypermemory-mode.png" alt="HyperMemory hierarchy mode" width="300"> | <img src="docs/assets/screenshots/hypermemory-agent.png" alt="HyperMemory Agent mode" width="300"> |
+| <img src="docs/assets/screenshots/hypermemory-dashboard.png" alt="HyperMemory dashboard" width="300"> | <img src="docs/assets/screenshots/hypermemory-hyper-mode.png" alt="HyperMemory Hyper mode" width="300"> | <img src="docs/assets/screenshots/hypermemory-agent.png" alt="HyperMemory Agent mode" width="300"> |
 
 | GBrain conversation | Production readiness | Mobile |
 | --- | --- | --- |
@@ -90,13 +90,11 @@ flowchart LR
     API --> Agent["Agent Service"]
     API --> Wiki["Wiki Facade"]
     API --> GBrain["GBrain Service"]
-    API --> Hierarchy["Hierarchy Memory"]
     API --> Hyper["Hyper Memory"]
     RAG --> Retrieval["Retrieval Context Service"]
     Agent --> Retrieval
     Wiki --> Retrieval
     GBrain --> Wiki
-    Hierarchy --> Wiki
     Hyper --> Wiki
     Retrieval --> Milvus[("Milvus vectors")]
     Retrieval --> MySQL[("MySQL chunks")]
@@ -141,4 +139,4 @@ docker-compose.yml    Full local runtime stack
 
 ## Production Readiness
 
-See [Production Review](docs/PRODUCTION-REVIEW.md) and [Production Gaps](docs/PRODUCTION-GAPS.md) for the detailed audit. The largest remaining decisions are durable memory persistence, tenant isolation, Bot idempotency, and whether final retrieval should collapse to SQLite-only or keep the current MySQL/Milvus/MinIO stack.
+See [Production Review](docs/PRODUCTION-REVIEW.md) and [Production Gaps](docs/PRODUCTION-GAPS.md) for the detailed audit. The largest remaining decisions are durable HyperMemory persistence, tenant isolation, Bot idempotency, and whether final retrieval should collapse to SQLite-only or keep the current MySQL/Milvus/MinIO stack.

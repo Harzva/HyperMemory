@@ -8,14 +8,21 @@
       </div>
 
       <div class="header-controls">
-        <label class="control">
+        <div class="control mode-control" role="group" aria-label="Mode">
           <span>Mode</span>
-          <select v-model="selectedMode">
-            <option v-for="mode in modes" :key="mode.value" :value="mode.value">
+          <div class="mode-toggle">
+            <button
+              v-for="mode in modes"
+              :key="mode.value"
+              type="button"
+              :class="['mode-button', { active: selectedMode === mode.value }]"
+              :aria-pressed="selectedMode === mode.value"
+              @click="selectMode(mode.value)"
+            >
               {{ mode.label }}
-            </option>
-          </select>
-        </label>
+            </button>
+          </div>
+        </div>
 
         <label class="control">
           <span>Theme</span>
@@ -124,7 +131,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 const productName = 'HyperMemory';
-const productSubtitle = 'Final memory-enhanced QA system with RAG, Agent, Wiki, GBrain, Hierarchy, and Hyper modes.';
+const productSubtitle = 'Final memory-enhanced QA system with RAG, Agent, Wiki, GBrain, and Hyper modes.';
 
 const modes = [
   {
@@ -144,7 +151,7 @@ const modes = [
     chatHint: 'Let the agent call retrieval tools before answering.',
   },
   {
-    value: 'llmwiki',
+    value: 'wiki',
     label: 'LLM Wiki',
     uploadEndpoint: '/api/wiki/upload',
     chatEndpoint: '/api/wiki/chat',
@@ -158,14 +165,6 @@ const modes = [
     chatEndpoint: '/api/gbrain/chat',
     uploadHint: 'Prepare wiki memory for skill-oriented reasoning.',
     chatHint: 'Use GBrain skills over the wiki memory layer.',
-  },
-  {
-    value: 'hierarchy',
-    label: 'Hierarchy',
-    uploadEndpoint: '/api/hierarchy/upload',
-    chatEndpoint: '/api/hierarchy/chat',
-    uploadHint: 'Ingest documents into layered memory.',
-    chatHint: 'Blend wiki memory with conversation context.',
   },
   {
     value: 'hyper',
@@ -225,7 +224,7 @@ const readinessSignals = [
   { label: 'Deploy', value: 'Compose + K8s', detail: 'Local stack and cluster template included' },
 ];
 
-const botChannels = ['Feishu Bot', 'DingTalk Bot', 'WeChat Bot', 'RAG', 'Wiki', 'Agent', 'GBrain', 'Hierarchy', 'Hyper'];
+const botChannels = ['Feishu Bot', 'DingTalk Bot', 'WeChat Bot', 'RAG', 'Wiki', 'Agent', 'GBrain', 'Hyper'];
 
 const selectedFile = ref(null);
 const uploadStatus = ref('');
@@ -239,6 +238,10 @@ const messageContainer = ref(null);
 let messageCounter = 0;
 
 const currentMode = computed(() => modes.find((mode) => mode.value === selectedMode.value) ?? modes[0]);
+
+function selectMode(mode) {
+  selectedMode.value = mode;
+}
 
 function applyTheme() {
   const theme = themes[selectedTheme.value] ?? themes.standard;
@@ -445,6 +448,46 @@ p {
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.mode-control {
+  width: min(640px, 100%);
+}
+
+.mode-toggle {
+  width: 100%;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.mode-button {
+  min-height: 32px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.mode-button:hover {
+  color: var(--text);
+  background: var(--surface-muted);
+}
+
+.mode-button.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(15, 118, 110, 0.18);
 }
 
 select,
@@ -750,6 +793,16 @@ select {
     width: 100%;
   }
 
+  .mode-control {
+    width: calc(100vw - 48px);
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .mode-toggle {
+    max-width: 100%;
+  }
+
   .brand-block p {
     overflow-wrap: anywhere;
   }
@@ -761,6 +814,7 @@ select {
   }
 
   select,
+  .mode-toggle,
   input,
   .file-input,
   .primary-btn {
@@ -770,6 +824,10 @@ select {
 
   select {
     width: 100%;
+  }
+
+  .mode-toggle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .chat-panel {

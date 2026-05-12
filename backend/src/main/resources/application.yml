@@ -63,14 +63,14 @@ bot:
       enabled: ${BOT_FEISHU_ENABLED:false}
       token: ${BOT_FEISHU_VERIFICATION_TOKEN:}
       signing-secret: ${BOT_FEISHU_SIGNING_SECRET:${BOT_SIGNING_SECRET:}}
-      allowed-modes: ${BOT_FEISHU_ALLOWED_MODES:rag,wiki,agent,gbrain,hierarchy,hyper}
+      allowed-modes: ${BOT_FEISHU_ALLOWED_MODES:rag,wiki,agent,gbrain,hyper}
     dingtalk:
       enabled: ${BOT_DINGTALK_ENABLED:false}
       token: ${BOT_DINGTALK_TOKEN:}
       signing-secret: ${BOT_DINGTALK_SIGNING_SECRET:${BOT_SIGNING_SECRET:}}
-      allowed-modes: ${BOT_DINGTALK_ALLOWED_MODES:rag,wiki,agent,gbrain,hierarchy,hyper}
+      allowed-modes: ${BOT_DINGTALK_ALLOWED_MODES:rag,wiki,agent,gbrain,hyper}
     wechat:
       enabled: ${BOT_WECHAT_ENABLED:false}
       token: ${BOT_WECHAT_TOKEN:}
       signing-secret: ${BOT_WECHAT_SIGNING_SECRET:${BOT_SIGNING_SECRET:}}
-      allowed-modes: ${BOT_WECHAT_ALLOWED_MODES:rag,wiki,agent,gbrain,hierarchy,hyper}
+      allowed-modes: ${BOT_WECHAT_ALLOWED_MODES:rag,wiki,agent,gbrain,hyper}

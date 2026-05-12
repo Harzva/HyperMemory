@@ -112,15 +112,15 @@ services:
       BOT_FEISHU_ENABLED: ${BOT_FEISHU_ENABLED:-false}
       BOT_FEISHU_VERIFICATION_TOKEN: ${BOT_FEISHU_VERIFICATION_TOKEN:-change-me}
       BOT_FEISHU_SIGNING_SECRET: ${BOT_FEISHU_SIGNING_SECRET:-change-me}
-      BOT_FEISHU_ALLOWED_MODES: ${BOT_FEISHU_ALLOWED_MODES:-rag,wiki,agent,gbrain,hierarchy,hyper}
+      BOT_FEISHU_ALLOWED_MODES: ${BOT_FEISHU_ALLOWED_MODES:-rag,wiki,agent,gbrain,hyper}
       BOT_DINGTALK_ENABLED: ${BOT_DINGTALK_ENABLED:-false}
       BOT_DINGTALK_TOKEN: ${BOT_DINGTALK_TOKEN:-change-me}
       BOT_DINGTALK_SIGNING_SECRET: ${BOT_DINGTALK_SIGNING_SECRET:-change-me}
-      BOT_DINGTALK_ALLOWED_MODES: ${BOT_DINGTALK_ALLOWED_MODES:-rag,wiki,agent,gbrain,hierarchy,hyper}
+      BOT_DINGTALK_ALLOWED_MODES: ${BOT_DINGTALK_ALLOWED_MODES:-rag,wiki,agent,gbrain,hyper}
       BOT_WECHAT_ENABLED: ${BOT_WECHAT_ENABLED:-false}
       BOT_WECHAT_TOKEN: ${BOT_WECHAT_TOKEN:-change-me}
       BOT_WECHAT_SIGNING_SECRET: ${BOT_WECHAT_SIGNING_SECRET:-change-me}
-      BOT_WECHAT_ALLOWED_MODES: ${BOT_WECHAT_ALLOWED_MODES:-rag,wiki,agent,gbrain,hierarchy,hyper}
+      BOT_WECHAT_ALLOWED_MODES: ${BOT_WECHAT_ALLOWED_MODES:-rag,wiki,agent,gbrain,hyper}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     healthcheck:

@@ -49,11 +49,11 @@ spec:
             - name: BOT_WECHAT_ENABLED
               value: "true"
             - name: BOT_FEISHU_ALLOWED_MODES
-              value: rag,wiki,agent,gbrain,hierarchy,hyper
+              value: rag,wiki,agent,gbrain,hyper
             - name: BOT_DINGTALK_ALLOWED_MODES
-              value: rag,wiki,agent,gbrain,hierarchy,hyper
+              value: rag,wiki,agent,gbrain,hyper
             - name: BOT_WECHAT_ALLOWED_MODES
-              value: rag,wiki,agent,gbrain,hierarchy,hyper
+              value: rag,wiki,agent,gbrain,hyper
           envFrom:
             - secretRef:
                 name: hypermemory-secrets

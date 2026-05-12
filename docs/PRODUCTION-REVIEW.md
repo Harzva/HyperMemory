@@ -9,10 +9,11 @@ HyperMemory is the final repository in the set. It should eventually collapse th
 | Area | Change |
 | --- | --- |
 | Product scope | README and UI now identify HyperMemory as the final memory-enhanced system. |
-| Frontend | Replaced the demo-like screen with a cleaner workbench layout and six explicit modes. |
+| Frontend | Replaced the demo-like screen with a cleaner workbench layout and five explicit modes. |
 | Agent behavior | Removed hardcoded FAQ answers; the agent now relies on retrieval tools for knowledge answers. |
 | Wiki behavior | Wiki mode now reads through the shared retrieval core before falling back to stored pages. |
 | GBrain | Replaced placeholder console skills with deterministic inspection skills and structured names. |
+| Memory layering | Removed duplicated interim memory routing so HyperMemory is the single final memory layer. |
 | Documentation | Added operations notes, architecture map, and an honest production checklist. |
 | CI | Added GitHub Actions jobs for frontend build and backend Maven tests. |
 | Bot integration | Added a disabled-by-default Bot gateway for Feishu, DingTalk, and WeChat adapters. |
@@ -22,9 +23,8 @@ HyperMemory is the final repository in the set. It should eventually collapse th
 
 | Priority | Work | Why |
 | --- | --- | --- |
-| P0 | Collapse hierarchy and hyper services into clear responsibilities | The current layers still share too much shape. |
 | P0 | Decide on SQLite-only final runtime | This is the main architectural fork from the current Docker stack. |
-| P1 | Persist memory state durably | Wiki, hierarchy, and hyper memory should survive restarts. |
+| P1 | Persist memory state durably | Wiki and HyperMemory state should survive restarts. |
 | P1 | Add source citations and retrieval traces | Production answers must be auditable. |
 | P1 | Add Bot idempotency storage | Prevents duplicate platform retries from creating duplicate model calls. |
 | P2 | Expand CI with Docker Compose smoke tests | Verifies the whole runtime, not only builds. |

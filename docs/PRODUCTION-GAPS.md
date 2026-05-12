@@ -8,14 +8,14 @@ HyperMemory is the final product repository, but it is not finished as a product
 | --- | --- | --- |
 | No user authentication | Anyone reaching the API can upload, query, or run memory modes. | Add OAuth/OIDC or gateway auth before public exposure. |
 | No tenant-scoped document isolation | Knowledge, memory, and Bot conversations can mix across organizations. | Add `tenantId` to documents, chunks, memory records, conversations, and retrieval filters. |
-| Hierarchy/Hyper memory is in memory | Restart loses important memory context. | Persist memory records in SQLite or MySQL with explicit lifecycle rules. |
+| HyperMemory is in memory | Restart loses important memory context. | Persist memory records in SQLite or MySQL with explicit lifecycle rules. |
 | No Bot idempotency store | Platform retries can trigger duplicate memory/model calls. | Store `(channel, messageId)` in Redis or MySQL with TTL. |
 
 ## P1 Architectural Hardening
 
 | Gap | Impact | Recommended fix |
 | --- | --- | --- |
-| Memory layers still share too much shape | The architecture can drift into duplicated concepts. | Collapse into clear responsibilities: retrieval, wiki, conversation memory, hyper aggregation. |
+| HyperMemory lacks durable memory semantics | The final memory layer still behaves like an in-process aggregation demo. | Define explicit memory records, retention rules, and retrieval traces. |
 | SQLite-only target is not implemented | Current stack is heavier than the desired final design. | Decide whether to migrate retrieval and memory to SQLite/SQLite-vss or keep Milvus. |
 | No source citation response model | Operators cannot audit why an answer was produced. | Return answer plus memory layer, chunk IDs, document names, and scores. |
 | `ddl-auto: update` | Schema changes are implicit. | Introduce Flyway/Liquibase migrations. |

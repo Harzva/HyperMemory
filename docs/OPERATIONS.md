@@ -24,8 +24,7 @@ Set `OPENAI_API_KEY` in `.env` before using model-backed chat.
 | Agent | `/api/agent/chat` | `/api/documents` | Tool-using agent over retrieved chunks. |
 | LLM Wiki | `/api/wiki/chat` | `/api/wiki/upload` | Wiki-style memory over retrieved chunks. |
 | GBrain | `/api/gbrain/chat` | `/api/wiki/upload` | Skill layer over wiki memory. |
-| Hierarchy | `/api/hierarchy/chat` | `/api/hierarchy/upload` | Wiki plus conversation memory. |
-| Hyper | `/api/hyper/chat` | `/api/hyper/upload` | Final aggregation layer for the demo. |
+| Hyper | `/api/hyper/chat` | `/api/hyper/upload` | Final conversation-memory aggregation over wiki context. |
 | Bot Gateway | `/api/bot/{channel}/callback` | N/A | Normalized Feishu, DingTalk, and WeChat callbacks. |
 
 ## Runtime Configuration
@@ -56,8 +55,8 @@ curl -i http://localhost:8080/actuator/health
 
 ## Production Checklist
 
-- Collapse hierarchy and hyper services into clearer responsibilities.
-- Replace in-memory wiki, hierarchy, and hyper state with durable persistence.
+- Keep HyperMemory as the single final memory aggregation layer.
+- Replace in-memory wiki and hyper state with durable persistence.
 - Decide whether the final runtime should stay on MySQL/Milvus/MinIO or move to SQLite-only retrieval.
 - Add idempotency storage for Bot message IDs before enabling platform retries.
 - Add source citations and retrieval traces in API responses.

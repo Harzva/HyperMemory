@@ -17,7 +17,6 @@ public class BotGatewayService {
     private final LLMWikiService wikiService;
     private final AgentService agentService;
     private final GBrainService gBrainService;
-    private final HierarchyMemoryService hierarchyMemoryService;
     private final HyperMemoryService hyperMemoryService;
 
     public BotGatewayService(BotGatewayProperties properties,
@@ -25,14 +24,12 @@ public class BotGatewayService {
                              LLMWikiService wikiService,
                              AgentService agentService,
                              GBrainService gBrainService,
-                             HierarchyMemoryService hierarchyMemoryService,
                              HyperMemoryService hyperMemoryService) {
         this.properties = properties;
         this.ragService = ragService;
         this.wikiService = wikiService;
         this.agentService = agentService;
         this.gBrainService = gBrainService;
-        this.hierarchyMemoryService = hierarchyMemoryService;
         this.hyperMemoryService = hyperMemoryService;
     }
 
@@ -51,7 +48,6 @@ public class BotGatewayService {
 
         String answer = switch (mode) {
             case "hyper" -> hyperMemoryService.query(text);
-            case "hierarchy" -> hierarchyMemoryService.query(text);
             case "agent" -> agentService.ask(text);
             case "gbrain" -> gBrainService.ask(text);
             case "wiki" -> wikiService.query(text);
