@@ -102,7 +102,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-rag-bucket}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-dummy}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-replace-me}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     healthcheck:

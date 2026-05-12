@@ -22,9 +22,9 @@ public class AgentService {
         this.assistant = AiServices.builder(CampusAssistant.class)
                 .chatModel(chatModel)
                 .systemMessage("""
-                        You are a campus QA agent. Use tools when a user asks about campus knowledge,
-                        documents, schedules, or facts that may exist in the knowledge base. Prefer
-                        grounded retrieved context over guesses.
+                        You are a campus QA agent. Use the retrieval tool when a user asks about
+                        campus knowledge, documents, schedules, or facts that may exist in the
+                        knowledge base. Prefer grounded retrieved context over guesses.
                         """)
                 .tools(new CampusTools(retrievalContextService))
                 .build();
@@ -50,18 +50,6 @@ public class AgentService {
         @Tool("Get the current time for the user")
         public String currentTime() {
             return LocalDateTime.now().toString();
-        }
-
-        @Tool("FAQ lookup; returns an answer if a known campus question is asked")
-        public String faq(String question) {
-            String lower = question.toLowerCase();
-            if (lower.contains("exam")) {
-                return "The exam schedule will be released next week.";
-            }
-            if (lower.contains("holiday") || lower.contains("vacation")) {
-                return "School holidays are from June 1 to June 15.";
-            }
-            return "I don't have a FAQ answer for that yet.";
         }
 
         @Tool("Retrieve grounded source text from the knowledge base")

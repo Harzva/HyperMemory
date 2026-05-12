@@ -1,70 +1,88 @@
-<p align="center">
-  <a href="#readme">English</a>
-</p>
-
 <h1 align="center">HyperMemory</h1>
 
 <p align="center">
-  <em>"A memory operating layer for AI knowledge systems."</em>
+  Final memory-enhanced AI knowledge system combining <strong>RAG</strong>, <strong>Agent</strong>, <strong>Wiki</strong>, <strong>GBrain</strong>, hierarchy memory, and hyper memory.
 </p>
 
 <p align="center">
   <img alt="Java 17" src="https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white">
-  <img alt="Spring Boot" src="https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?logo=springboot&logoColor=white">
+  <img alt="Spring Boot 3.3" src="https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?logo=springboot&logoColor=white">
   <img alt="Vue 3" src="https://img.shields.io/badge/Vue-3-42B883?logo=vuedotjs&logoColor=white">
-  <img alt="Agent" src="https://img.shields.io/badge/Agent-Tool%20Calling-5B5FC7">
-  <img alt="Memory" src="https://img.shields.io/badge/Memory-Hierarchy%20%2B%20Hyper-111827">
-  <img alt="Docker" src="https://img.shields.io/badge/Run-Docker%20Compose-2496ED?logo=docker&logoColor=white">
+  <img alt="Memory" src="https://img.shields.io/badge/Memory-HyperMemory-111827">
+  <img alt="Docker Compose" src="https://img.shields.io/badge/Run-Docker%20Compose-2496ED?logo=docker&logoColor=white">
 </p>
 
 <p align="center">
-  HyperMemory is the product-oriented final system evolved from CampusRAG-QA. It is no longer limited to campus scenarios.
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="docs/OPERATIONS.md">Operations</a> ·
+  <a href="docs/PRODUCTION-REVIEW.md">Production Review</a>
 </p>
 
-![HyperMemory dashboard](docs/assets/screenshots/hypermemory-dashboard.png)
+<p align="center">
+  <img src="docs/assets/screenshots/hypermemory-dashboard.png" alt="HyperMemory frontend preview" width="920">
+</p>
 
-## Product Scope
+## Position
 
-HyperMemory combines several AI knowledge system patterns in one runnable project:
+HyperMemory is the final repository in the Campus QA family. It keeps the useful ideas from RAG, Agent, LLM Wiki, GBrain, hierarchy memory, and hyper memory in one runnable project while making the remaining production gaps explicit.
 
-| Layer | Capability |
+| Repository | Role |
 | --- | --- |
-| RAG | Upload documents, create embeddings, retrieve context, answer with an LLM. |
-| Agent | Route questions through tool-aware agent logic. |
-| LLM Wiki | Turn uploaded knowledge into wiki-like memory pages. |
-| GBrain | Add a skill-oriented layer on top of wiki memory. |
-| Hierarchy Memory | Combine wiki content with conversation memory. |
-| Hyper Memory | Final aggregation layer for longer-lived memory behavior. |
+| `Harzva/CampusRAG-QA` | Baseline RAG + Wiki mode. |
+| `Harzva/CampusAgent-QA` | Agent tools, Wiki memory, and GBrain skills. |
+| `Harzva/HyperMemory` | Final memory-enhanced system. |
 
-Current RAG retrieval stores each text chunk in MySQL, indexes chunk IDs in Milvus, and hydrates real source text before prompting the model.
+## What Changed In This Cleanup
 
-## Screenshots
-
-| Desktop | Mode selection |
+| Before | Now |
 | --- | --- |
-| ![Desktop](docs/assets/screenshots/hypermemory-dashboard.png) | ![Hyper mode](docs/assets/screenshots/hypermemory-mode.png) |
+| Demo-like frontend title and layout | Product-specific workbench with real mode names. |
+| Hardcoded Agent FAQ answers | Agent relies on retrieval tools for knowledge answers. |
+| Wiki mode dumped stored pages first | Wiki mode queries the shared retrieval core first. |
+| Placeholder GBrain console examples | Deterministic inspection skills with structured names. |
+| README described production as if finished | README and production review separate what is done from what remains. |
 
-| Mobile |
-| --- |
-| ![Mobile](docs/assets/screenshots/hypermemory-mobile.png) |
+## Modes
+
+| Mode | Endpoint | Purpose |
+| --- | --- | --- |
+| RAG | `/api/chat` | Direct grounded QA over retrieved chunks. |
+| Agent | `/api/agent/chat` | Tool-using QA over the same retrieval core. |
+| LLM Wiki | `/api/wiki/chat` | Wiki-style memory over retrieved chunks. |
+| GBrain | `/api/gbrain/chat` | Skill layer over wiki memory. |
+| Hierarchy | `/api/hierarchy/chat` | Wiki plus conversation context. |
+| Hyper | `/api/hyper/chat` | Final aggregation layer for the demo. |
+
+## Frontend Preview
+
+The README includes the actual UI surface so visitors can evaluate the product feel before running Docker.
+
+| Desktop | Mode selection | Mobile |
+| --- | --- | --- |
+| <img src="docs/assets/screenshots/hypermemory-dashboard.png" alt="HyperMemory desktop" width="320"> | <img src="docs/assets/screenshots/hypermemory-mode.png" alt="HyperMemory mode switch" width="320"> | <img src="docs/assets/screenshots/hypermemory-mobile.png" alt="HyperMemory mobile" width="180"> |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    User[User] --> UI[Vue 3 UI]
-    UI --> API[Spring Boot API]
-    API --> RAG[RAG Service]
-    API --> Agent[Agent Service]
-    API --> Wiki[LLM Wiki]
-    API --> GBrain[GBrain Skills]
-    API --> Hierarchy[Hierarchy Memory]
-    API --> Hyper[Hyper Memory]
-    RAG --> Milvus[(Milvus)]
-    API --> MinIO[(MinIO)]
-    API --> MySQL[(MySQL)]
-    API --> Redis[(Redis)]
-    API --> Model[OpenAI-compatible model]
+    User["Browser"] --> UI["Vue 3 Workbench"]
+    UI --> API["Spring Boot API"]
+    API --> RAG["RAG Service"]
+    API --> Agent["Agent Service"]
+    API --> Wiki["Wiki Facade"]
+    API --> GBrain["GBrain Service"]
+    API --> Hierarchy["Hierarchy Memory"]
+    API --> Hyper["Hyper Memory"]
+    RAG --> Retrieval["Retrieval Context Service"]
+    Agent --> Retrieval
+    Wiki --> Retrieval
+    GBrain --> Wiki
+    Hierarchy --> Wiki
+    Hyper --> Wiki
+    Retrieval --> Milvus[("Milvus vectors")]
+    Retrieval --> MySQL[("MySQL chunks")]
+    API --> MinIO[("MinIO files")]
+    API --> Model["OpenAI-compatible models"]
 ```
 
 ## Quick Start
@@ -80,24 +98,20 @@ Open:
 - Backend health: `http://localhost:8080/actuator/health`
 - MinIO console: `http://localhost:9001`
 
-Set `OPENAI_API_KEY` in `.env` before expecting real model answers.
+Set `OPENAI_API_KEY` in `.env` before expecting model-backed answers.
 
-## Production-Oriented Defaults
+## Repository Layout
 
-- Vite entrypoint is present through `frontend/index.html`.
-- Nginx serves the SPA and proxies `/api` to Spring Boot.
-- Runtime secrets and ports are externalized through `.env`.
-- Docker Compose has service health checks.
-- Spring Boot exposes actuator health probes.
-- Upload size is configured for larger knowledge files.
+```text
+backend/              Spring Boot API and memory services
+frontend/             Vue 3 workbench
+docs/assets/          README screenshots
+docs/OPERATIONS.md    Runtime and endpoint notes
+docs/PRODUCTION-REVIEW.md
+docker-compose.yml    Full local runtime stack
+.env.example          Runtime configuration template
+```
 
-See [Operations Guide](docs/OPERATIONS.md) for mode endpoints, configuration, and hardening notes.
+## Production Readiness
 
-## Roadmap
-
-- Durable memory storage for wiki, hierarchy, and hyper memory.
-- Real streaming token output instead of single-event SSE.
-- Multi-tenant workspaces and role-based access control.
-- Source-grounded answers with citations.
-- Background skill scheduling and audit trail.
-- Evaluation suite for retrieval quality and memory quality.
+See [Production Review](docs/PRODUCTION-REVIEW.md) for the detailed audit. The largest remaining decision is whether the final HyperMemory runtime should collapse to SQLite-only retrieval, as originally intended, or keep the current MySQL/Milvus/MinIO Docker stack.

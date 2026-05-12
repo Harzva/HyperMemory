@@ -7,44 +7,43 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Check:
+Open:
 
-```bash
-docker compose ps
-curl http://localhost:8080/actuator/health
-```
+- Frontend: `http://localhost:3000`
+- Backend health: `http://localhost:8080/actuator/health`
+- MinIO console: `http://localhost:9001`
+
+Set `OPENAI_API_KEY` in `.env` before using model-backed chat.
 
 ## Modes
 
-The frontend can route chat and upload requests to multiple backend modes:
+| Mode | Chat endpoint | Upload endpoint | Purpose |
+| --- | --- | --- | --- |
+| RAG | `/api/chat` | `/api/documents` | Direct retrieval-augmented QA. |
+| Agent | `/api/agent/chat` | `/api/documents` | Tool-using agent over retrieved chunks. |
+| LLM Wiki | `/api/wiki/chat` | `/api/wiki/upload` | Wiki-style memory over retrieved chunks. |
+| GBrain | `/api/gbrain/chat` | `/api/wiki/upload` | Skill layer over wiki memory. |
+| Hierarchy | `/api/hierarchy/chat` | `/api/hierarchy/upload` | Wiki plus conversation memory. |
+| Hyper | `/api/hyper/chat` | `/api/hyper/upload` | Final aggregation layer for the demo. |
 
-| Mode | Chat endpoint | Upload endpoint |
-| --- | --- | --- |
-| RAG | `/api/chat` | `/api/documents` |
-| Agent | `/api/agent/chat` | `/api/documents` |
-| LLM Wiki | `/api/wiki/chat` | `/api/wiki/upload` |
-| GBrain | `/api/gbrain/chat` | `/api/wiki/upload` |
-| Hierarchy Memory | `/api/hierarchy/chat` | `/api/hierarchy/upload` |
-| Hyper Memory | `/api/hyper/chat` | `/api/hyper/upload` |
-
-## Configuration
-
-Use `.env` for runtime settings. Do not commit real API keys.
+## Runtime Configuration
 
 | Variable | Purpose |
 | --- | --- |
-| `OPENAI_API_KEY` | Model provider key. |
+| `OPENAI_API_KEY` | OpenAI-compatible model provider key. |
+| `OPENAI_CHAT_MODEL` | Chat model name. |
+| `OPENAI_EMBEDDING_MODEL` | Embedding model name. |
 | `FRONTEND_PORT` | Browser-facing frontend port. |
 | `BACKEND_PORT` | Browser/API-facing backend port. |
-| `MYSQL_ROOT_PASSWORD` | MySQL root password for local stack. |
-| `MINIO_ROOT_USER` | MinIO console/access username. |
-| `MINIO_ROOT_PASSWORD` | MinIO password. |
+| `MYSQL_ROOT_PASSWORD` | Local MySQL root password. |
+| `MINIO_ROOT_USER` | Local MinIO username. |
+| `MINIO_ROOT_PASSWORD` | Local MinIO password. |
 
-## Production Readiness Checklist
+## Production Checklist
 
-- Persist wiki, hierarchy, and hyper memory outside JVM memory.
-- Add authentication and workspace isolation.
-- Add source citations and retrieval traces.
-- Add CI builds and integration smoke tests.
-- Add observability for API latency, retrieval latency, and model cost.
-
+- Collapse duplicated memory layers into a smaller set of real responsibilities.
+- Replace in-memory wiki, hierarchy, and hyper state with durable persistence.
+- Decide whether the final runtime should stay on MySQL/Milvus/MinIO or move to SQLite-only retrieval.
+- Add source citations and retrieval traces in API responses.
+- Add CI for `npm run build` and `mvn test`.
+- Add authentication, workspace isolation, and audit logging.

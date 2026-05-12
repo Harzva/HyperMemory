@@ -1,5 +1,5 @@
 {
-  "name": "campus-rag-frontend",
+  "name": "hypermemory-frontend",
   "version": "0.1.0",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,7 @@
     "vue": "^3.3.4"
   },
   "devDependencies": {
-    "vite": "^5.0.0",
-    "@vitejs/plugin-vue": "^5.0.0"
+    "@vitejs/plugin-vue": "^6.0.6",
+    "vite": "^8.0.12"
   }
 }

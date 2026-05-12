@@ -1,442 +1,660 @@
 <template>
-  <!-- Top application header with gradient background -->
-  <header class="app-header">
-    <h1>Campus RAG Demo</h1>
-    <!-- Theme selector: allows user to switch between color schemes -->
-    <div class="theme-selector">
-      <label for="theme-select">Theme:</label>
-      <select id="theme-select" v-model="selectedTheme" @change="applyTheme">
-        <option value="default">Default</option>
-        <option value="purple">Purple</option>
-        <option value="orange">Orange</option>
-      </select>
-    </div>
-    <!-- Mode selector: choose between RAG, Agent, LLM‑Wiki, GBrain, HierarchyMemory and HyperMemory modes -->
-    <div class="mode-selector">
-      <label for="mode-select">Mode:</label>
-      <select id="mode-select" v-model="selectedMode">
-        <option value="rag">RAG</option>
-        <option value="agent">Agent</option>
-        <option value="llmwiki">LLM Wiki</option>
-        <option value="gbrain">GBrain</option>
-        <option value="hierarchy">Hierarchy Memory</option>
-        <option value="hyper">Hyper Memory</option>
-      </select>
-    </div>
-  </header>
-  <!-- Main content container -->
-  <main class="container">
-    <section class="upload">
-      <h2>Upload Knowledge File</h2>
-      <input type="file" @change="onFileChange" />
-      <button class="primary-btn" @click="uploadFile" :disabled="!selectedFile">Upload</button>
-      <p v-if="uploadStatus">{{ uploadStatus }}</p>
-    </section>
-    <section class="chat">
-      <h2>Ask a Question</h2>
-      <!-- Animated message list using transition-group for smooth message appearance -->
-      <transition-group name="message" tag="div" class="messages" ref="messageContainer">
-        <div
-          v-for="msg in messages"
-          :key="msg.id"
-          :class="['message', msg.role.toLowerCase()]"
-        >
-          <!-- display the role on its own line for clarity -->
-          <strong class="message-label">{{ msg.role }}</strong>
-          <span class="message-content">{{ msg.content }}</span>
-        </div>
-        <!-- Loading spinner shown when waiting for assistant reply -->
-        <div v-if="loading" class="spinner" key="spinner"></div>
-      </transition-group>
-      <div class="input-row">
-        <input
-          v-model="userInput"
-          @keyup.enter="sendQuestion"
-          placeholder="Type your question..."
-        />
-        <button class="primary-btn" @click="sendQuestion" :disabled="!userInput">Send</button>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand-block">
+        <span class="eyebrow">Knowledge QA Workbench</span>
+        <h1>{{ productName }}</h1>
+        <p>{{ productSubtitle }}</p>
       </div>
-    </section>
-  </main>
+
+      <div class="header-controls">
+        <label class="control">
+          <span>Mode</span>
+          <select v-model="selectedMode">
+            <option v-for="mode in modes" :key="mode.value" :value="mode.value">
+              {{ mode.label }}
+            </option>
+          </select>
+        </label>
+
+        <label class="control">
+          <span>Theme</span>
+          <select v-model="selectedTheme">
+            <option value="standard">Standard</option>
+            <option value="forest">Forest</option>
+            <option value="amber">Amber</option>
+          </select>
+        </label>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel upload-panel">
+        <div class="panel-heading">
+          <span class="step">01</span>
+          <div>
+            <h2>Upload Knowledge File</h2>
+            <p>{{ currentMode.uploadHint }}</p>
+          </div>
+        </div>
+
+        <div class="upload-row">
+          <label class="file-input">
+            <input type="file" @change="onFileChange" />
+            <span>{{ selectedFile ? selectedFile.name : 'Choose file' }}</span>
+          </label>
+          <button class="primary-btn" @click="uploadFile" :disabled="!selectedFile || uploading">
+            {{ uploading ? 'Uploading' : 'Upload' }}
+          </button>
+        </div>
+
+        <p v-if="uploadStatus" class="status-text">{{ uploadStatus }}</p>
+      </section>
+
+      <section class="panel chat-panel">
+        <div class="panel-heading">
+          <span class="step">02</span>
+          <div>
+            <h2>Ask a Question</h2>
+            <p>{{ currentMode.chatHint }}</p>
+          </div>
+          <span class="mode-pill">{{ currentMode.label }}</span>
+        </div>
+
+        <transition-group name="message" tag="div" class="messages" ref="messageContainer">
+          <div v-if="messages.length === 0 && !loading" key="empty" class="empty-state">
+            Start with a question about the uploaded knowledge base.
+          </div>
+
+          <div
+            v-for="msg in messages"
+            :key="msg.id"
+            :class="['message', msg.role.toLowerCase()]"
+          >
+            <strong>{{ msg.role }}</strong>
+            <span>{{ msg.content }}</span>
+          </div>
+
+          <div v-if="loading" key="loading" class="message assistant pending">
+            <strong>Assistant</strong>
+            <span>Thinking...</span>
+          </div>
+        </transition-group>
+
+        <div class="input-row">
+          <input
+            v-model="userInput"
+            @keyup.enter="sendQuestion"
+            placeholder="Type your question..."
+          />
+          <button class="primary-btn" @click="sendQuestion" :disabled="!userInput.trim() || loading">
+            Send
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
-const selectedFile = ref(null);
-const uploadStatus = ref('');
-const userInput = ref('');
-const messages = ref([]);
-let messageCounter = 0;
-const messageContainer = ref(null);
+const productName = 'HyperMemory';
+const productSubtitle = 'Final memory-enhanced QA system with RAG, Agent, Wiki, GBrain, Hierarchy, and Hyper modes.';
 
-// Flag for showing a loading spinner while waiting for assistant response
-const loading = ref(false);
-
-// Theme selection for dynamic color schemes
-const selectedTheme = ref('default');
-
-// Mode selection for toggling between RAG and Agent backends
-const selectedMode = ref('rag');
+const modes = [
+  {
+    value: 'rag',
+    label: 'RAG',
+    uploadEndpoint: '/api/documents',
+    chatEndpoint: '/api/chat',
+    uploadHint: 'Index source documents for grounded retrieval.',
+    chatHint: 'Answer directly from retrieved document chunks.',
+  },
+  {
+    value: 'agent',
+    label: 'Agent',
+    uploadEndpoint: '/api/documents',
+    chatEndpoint: '/api/agent/chat',
+    uploadHint: 'Feed the shared retrieval index used by the agent.',
+    chatHint: 'Let the agent call retrieval tools before answering.',
+  },
+  {
+    value: 'llmwiki',
+    label: 'LLM Wiki',
+    uploadEndpoint: '/api/wiki/upload',
+    chatEndpoint: '/api/wiki/chat',
+    uploadHint: 'Convert uploaded knowledge into wiki-style memory.',
+    chatHint: 'Read from the wiki memory generated from documents.',
+  },
+  {
+    value: 'gbrain',
+    label: 'GBrain',
+    uploadEndpoint: '/api/wiki/upload',
+    chatEndpoint: '/api/gbrain/chat',
+    uploadHint: 'Prepare wiki memory for skill-oriented reasoning.',
+    chatHint: 'Use GBrain skills over the wiki memory layer.',
+  },
+  {
+    value: 'hierarchy',
+    label: 'Hierarchy',
+    uploadEndpoint: '/api/hierarchy/upload',
+    chatEndpoint: '/api/hierarchy/chat',
+    uploadHint: 'Ingest documents into layered memory.',
+    chatHint: 'Blend wiki memory with conversation context.',
+  },
+  {
+    value: 'hyper',
+    label: 'Hyper',
+    uploadEndpoint: '/api/hyper/upload',
+    chatEndpoint: '/api/hyper/chat',
+    uploadHint: 'Ingest into the final HyperMemory layer.',
+    chatHint: 'Use the final aggregation memory layer.',
+  },
+];
 
 const themes = {
-  default: {
-    '--primary-color': '#0d47a1',
-    '--primary-color-light': '#e3f2fd',
-    '--primary-color-dark': '#0a2e74',
-    '--secondary-color': '#33691e',
-    '--secondary-color-light': '#f1f8e9',
-    '--secondary-color-dark': '#234013',
-    '--accent-color': '#ff9800',
-    '--accent-color-light': '#ffe0b2',
+  standard: {
+    '--surface': '#ffffff',
+    '--surface-muted': '#f6f8fb',
+    '--line': '#d9e0e8',
+    '--text': '#17202a',
+    '--muted': '#637083',
+    '--primary': '#0f766e',
+    '--primary-dark': '#115e59',
+    '--primary-soft': '#d9f2ee',
+    '--assistant': '#f3f6fb',
+    '--accent': '#b45309',
   },
-  purple: {
-    '--primary-color': '#6a1b9a',
-    '--primary-color-light': '#f3e5f5',
-    '--primary-color-dark': '#38006b',
-    '--secondary-color': '#ad1457',
-    '--secondary-color-light': '#fce4ec',
-    '--secondary-color-dark': '#78002e',
-    '--accent-color': '#7c4dff',
-    '--accent-color-light': '#d1c4e9',
+  forest: {
+    '--surface': '#ffffff',
+    '--surface-muted': '#f4f7f2',
+    '--line': '#d7dfd2',
+    '--text': '#18251c',
+    '--muted': '#61705f',
+    '--primary': '#287044',
+    '--primary-dark': '#1f5735',
+    '--primary-soft': '#ddf0e4',
+    '--assistant': '#f4f7f2',
+    '--accent': '#8a5a15',
   },
-  orange: {
-    '--primary-color': '#e65100',
-    '--primary-color-light': '#ffece5',
-    '--primary-color-dark': '#bf360c',
-    '--secondary-color': '#004d40',
-    '--secondary-color-light': '#e0f2f1',
-    '--secondary-color-dark': '#00251a',
-    '--accent-color': '#ff6f00',
-    '--accent-color-light': '#fff3e0',
+  amber: {
+    '--surface': '#ffffff',
+    '--surface-muted': '#f8f7f4',
+    '--line': '#e3ded4',
+    '--text': '#211f1a',
+    '--muted': '#746d60',
+    '--primary': '#8b5e10',
+    '--primary-dark': '#6e490c',
+    '--primary-soft': '#f4ead4',
+    '--assistant': '#f8f7f4',
+    '--accent': '#0f766e',
   },
 };
 
+const selectedFile = ref(null);
+const uploadStatus = ref('');
+const uploading = ref(false);
+const userInput = ref('');
+const messages = ref([]);
+const loading = ref(false);
+const selectedMode = ref('hyper');
+const selectedTheme = ref('standard');
+const messageContainer = ref(null);
+let messageCounter = 0;
+
+const currentMode = computed(() => modes.find((mode) => mode.value === selectedMode.value) ?? modes[0]);
+
 function applyTheme() {
-  const theme = themes[selectedTheme.value];
-  Object.keys(theme).forEach((key) => {
-    document.documentElement.style.setProperty(key, theme[key]);
+  const theme = themes[selectedTheme.value] ?? themes.standard;
+  Object.entries(theme).forEach(([key, value]) => {
+    document.documentElement.style.setProperty(key, value);
   });
 }
 
-// Apply the theme on mount and whenever the selection changes
-onMounted(() => applyTheme());
-watch(selectedTheme, () => applyTheme());
+onMounted(applyTheme);
+watch(selectedTheme, applyTheme);
+
+function onFileChange(event) {
+  selectedFile.value = event.target.files?.[0] ?? null;
+  uploadStatus.value = '';
+}
 
 function scrollToBottom() {
   nextTick(() => {
-    if (messageContainer.value) {
-      messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+    const container = messageContainer.value?.$el ?? messageContainer.value;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
     }
   });
 }
 
-function onFileChange(event) {
-  selectedFile.value = event.target.files[0];
-}
-
 async function uploadFile() {
-  if (!selectedFile.value) return;
+  if (!selectedFile.value || uploading.value) return;
+
   const formData = new FormData();
   formData.append('file', selectedFile.value);
-  uploadStatus.value = 'Uploading...';
+  uploading.value = true;
+  uploadStatus.value = 'Uploading and indexing...';
+
   try {
-    // Choose the upload endpoint based on the selected mode. When using
-    // LLM‑Wiki or GBrain modes we upload to the wiki ingestion endpoint,
-    // otherwise we upload to the standard RAG endpoint.
-    // Choose upload endpoint based on selected mode.  LLM‑Wiki and GBrain
-    // share the wiki upload endpoint, Hierarchy uses its own, Hyper uses
-    // its own, and all others use the standard documents endpoint.
-    let uploadEndpoint;
-    if (selectedMode.value === 'llmwiki' || selectedMode.value === 'gbrain') {
-      uploadEndpoint = '/api/wiki/upload';
-    } else if (selectedMode.value === 'hierarchy') {
-      uploadEndpoint = '/api/hierarchy/upload';
-    } else if (selectedMode.value === 'hyper') {
-      uploadEndpoint = '/api/hyper/upload';
-    } else {
-      uploadEndpoint = '/api/documents';
-    }
-    const resp = await fetch(uploadEndpoint, {
+    const response = await fetch(currentMode.value.uploadEndpoint, {
       method: 'POST',
       body: formData,
     });
-    if (resp.ok) {
-      uploadStatus.value = 'Upload complete and indexed.';
-      selectedFile.value = null;
-    } else {
-      uploadStatus.value = 'Upload failed: ' + resp.statusText;
+    if (!response.ok) {
+      throw new Error(response.statusText || `HTTP ${response.status}`);
     }
-  } catch (err) {
-    uploadStatus.value = 'Upload error: ' + err.message;
+    uploadStatus.value = `Indexed for ${currentMode.value.label}.`;
+    selectedFile.value = null;
+  } catch (error) {
+    uploadStatus.value = `Upload failed: ${error.message}`;
+  } finally {
+    uploading.value = false;
   }
 }
 
 async function sendQuestion() {
   const input = userInput.value.trim();
-  if (!input) return;
+  if (!input || loading.value) return;
+
   messages.value.push({ id: ++messageCounter, role: 'User', content: input });
   userInput.value = '';
+  loading.value = true;
   scrollToBottom();
-  const body = JSON.stringify({ conversationId: 'default', userInput: input });
+
+  const assistantMessage = { id: ++messageCounter, role: 'Assistant', content: '' };
+
   try {
-    // show spinner until we finish reading response
-    loading.value = true;
-    // Determine the endpoint based on the selected mode. RAG uses /api/chat,
-    // Agent uses /api/agent/chat, LLM‑Wiki uses /api/wiki/chat, and GBrain
-    // uses /api/gbrain/chat.
-    let endpoint;
-    if (selectedMode.value === 'agent') {
-      endpoint = '/api/agent/chat';
-    } else if (selectedMode.value === 'llmwiki') {
-      endpoint = '/api/wiki/chat';
-    } else if (selectedMode.value === 'gbrain') {
-      endpoint = '/api/gbrain/chat';
-    } else if (selectedMode.value === 'hierarchy') {
-      endpoint = '/api/hierarchy/chat';
-    } else if (selectedMode.value === 'hyper') {
-      endpoint = '/api/hyper/chat';
-    } else {
-      endpoint = '/api/chat';
-    }
-    const resp = await fetch(endpoint, {
+    const response = await fetch(currentMode.value.chatEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body,
+      body: JSON.stringify({ conversationId: 'default', userInput: input }),
     });
-    if (resp.ok) {
-      // Stream assistant reply and update message content progressively
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      // create an empty assistant message that will be updated on the fly
-      const assistantMsg = { id: ++messageCounter, role: 'Assistant', content: '' };
-      messages.value.push(assistantMsg);
-      scrollToBottom();
-      while (true) {
-        const { value, done } = await reader.read();
-        if (value) {
-          assistantMsg.content += decoder.decode(value, { stream: true });
-          scrollToBottom();
-        }
-        if (done) break;
-      }
-      loading.value = false;
-    } else {
-      messages.value.push({ id: ++messageCounter, role: 'Assistant', content: 'Error: ' + resp.statusText });
-      loading.value = false;
+    if (!response.ok) {
+      throw new Error(response.statusText || `HTTP ${response.status}`);
     }
-  } catch (err) {
-    messages.value.push({ id: ++messageCounter, role: 'Assistant', content: 'Error: ' + err.message });
+
+    messages.value.push(assistantMessage);
+    await readResponse(response, assistantMessage);
+  } catch (error) {
+    messages.value.push({
+      id: assistantMessage.id,
+      role: 'Assistant',
+      content: `Error: ${error.message}`,
+    });
+  } finally {
     loading.value = false;
+    scrollToBottom();
+  }
+}
+
+async function readResponse(response, assistantMessage) {
+  if (!response.body) {
+    assistantMessage.content = await response.text();
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (value) {
+      assistantMessage.content += decoder.decode(value, { stream: true });
+      scrollToBottom();
+    }
+    if (done) break;
   }
 }
 </script>
 
 <style scoped>
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 8px auto;
+:global(*) {
+  box-sizing: border-box;
 }
 
-/* Theme variables: define primary, secondary, and accent colors for easy customization */
-:root {
-  --primary-color: #0d47a1;
-  --primary-color-light: #e3f2fd;
-  --primary-color-dark: #0a2e74;
-  --secondary-color: #33691e;
-  --secondary-color-light: #f1f8e9;
-  --secondary-color-dark: #234013;
-  --accent-color: #ff9800;
-  --accent-color-light: #ffe0b2;
-}
-
-/* Application header with gradient */
-.app-header {
-  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-  color: #ffffff;
-  padding: 24px 0;
-  text-align: center;
-  margin-bottom: 32px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.app-header h1 {
+:global(body) {
   margin: 0;
-  font-size: 2rem;
-  font-weight: bold;
+  background: var(--surface-muted);
+  color: var(--text);
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  overflow-x: hidden;
 }
 
-/* Theme selector inside header */
-.theme-selector {
-  margin-top: 8px;
+.app-shell {
+  min-height: 100vh;
+  padding-bottom: 32px;
+}
+
+.app-header {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.theme-selector label {
-  color: #ffffff;
-  font-size: 0.9rem;
-}
-.theme-selector select {
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: none;
-  font-size: 0.9rem;
-  cursor: pointer;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px clamp(18px, 5vw, 64px);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
 }
 
-/* Mode selector styling */
-.mode-selector {
+.brand-block {
+  max-width: 780px;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.brand-block h1 {
   margin-top: 8px;
+  font-size: clamp(2rem, 4vw, 3.7rem);
+  line-height: 1;
+}
+
+.brand-block p {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.header-controls {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.mode-selector label {
-  color: #ffffff;
-  font-size: 0.9rem;
-}
-.mode-selector select {
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: none;
-  font-size: 0.9rem;
-  cursor: pointer;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-/* Main container for content */
-.container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 16px;
-  font-family: Arial, sans-serif;
-  /* Use primary text color for general text */
-  color: var(--primary-color);
+.control {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
-
-/* Section headings */
-section h2 {
-  margin-top: 0;
-  margin-bottom: 16px;
-  color: var(--primary-color-dark);
+select,
+input {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
 }
 
-.upload,
-.chat {
-  border: 1px solid #ccc;
+select {
+  min-width: 142px;
+  padding: 0 12px;
+}
+
+.workspace {
+  width: min(1080px, calc(100% - 32px));
+  margin: 28px auto 0;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.6fr);
+  gap: 18px;
+  min-width: 0;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
-  background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 18px;
+  box-shadow: 0 16px 34px rgba(23, 32, 42, 0.06);
+  min-width: 0;
 }
 
-/* Chat window styling */
-.messages {
-  height: 300px;
-  border: 1px solid #eee;
-  padding: 8px;
-  margin-bottom: 8px;
-  overflow-y: auto;
-  background-color: #fafafa;
+.panel-heading {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
-/* Generic message bubble */
-.message {
-  max-width: 70%;
-  padding: 8px 12px;
-  border-radius: 12px;
-  line-height: 1.4;
-  word-wrap: break-word;
+.panel-heading h2 {
+  font-size: 1.05rem;
 }
 
-/* Label and content separation */
-.message-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 2px;
-}
-.message-content {
-  white-space: pre-wrap;
+.panel-heading p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
-/* User message specific styles */
-.message.user {
-  align-self: flex-end;
-  background-color: var(--primary-color-light);
-  color: var(--primary-color);
+.step,
+.mode-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
-/* Assistant message specific styles */
-.message.assistant {
-  align-self: flex-start;
-  background-color: var(--secondary-color-light);
-  color: var(--secondary-color);
+.mode-pill {
+  margin-left: auto;
+  padding: 0 10px;
 }
 
+.upload-row,
 .input-row {
   display: flex;
-  gap: 8px;
-}
-.input-row input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  gap: 10px;
 }
 
-/* Primary button styling used throughout the app */
-.primary-btn {
-  background-color: var(--primary-color);
-  color: #ffffff;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
+.file-input {
+  flex: 1;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  color: var(--muted);
   cursor: pointer;
-  transition: background-color 0.2s ease;
+}
+
+.file-input input {
+  display: none;
+}
+
+.file-input span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.primary-btn {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 750;
+  cursor: pointer;
 }
 
 .primary-btn:hover:not(:disabled) {
-  background-color: var(--primary-color-dark);
+  background: var(--primary-dark);
 }
 
 .primary-btn:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+  opacity: 0.55;
 }
 
-/* Message list transition animations */
+.status-text {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.chat-panel {
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages {
+  flex: 1;
+  min-height: 360px;
+  max-height: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  overflow-y: auto;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.empty-state {
+  margin: auto;
+  color: var(--muted);
+  text-align: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.message {
+  max-width: min(76%, 720px);
+  padding: 10px 12px;
+  border-radius: 8px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.message strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 0.78rem;
+}
+
+.message span {
+  white-space: pre-wrap;
+}
+
+.message.user {
+  align-self: flex-end;
+  background: var(--primary);
+  color: #fff;
+}
+
+.message.assistant {
+  align-self: flex-start;
+  background: var(--assistant);
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.message.pending span::after {
+  content: "";
+  display: inline-block;
+  width: 0.8em;
+  animation: pulse 1.1s infinite;
+}
+
+.input-row {
+  margin-top: 12px;
+}
+
+.input-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+}
+
 .message-enter-active,
 .message-leave-active {
-  transition: all 0.25s ease;
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
+
 .message-enter-from,
 .message-leave-to {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(6px);
 }
-.message-enter-to,
-.message-leave-from {
-  opacity: 1;
-  transform: translateY(0);
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 820px) {
+  .app-header,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .app-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .header-controls,
+  .upload-row,
+  .input-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .header-controls,
+  .control {
+    width: 100%;
+  }
+
+  .brand-block p {
+    overflow-wrap: anywhere;
+  }
+
+  .brand-block,
+  .messages {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  select,
+  input,
+  .file-input,
+  .primary-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  select {
+    width: 100%;
+  }
+
+  .chat-panel {
+    min-height: 480px;
+  }
+
+  .message {
+    max-width: 92%;
+  }
 }
 </style>
