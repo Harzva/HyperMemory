@@ -14,7 +14,7 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring.boot.version>3.3.0</spring.boot.version>
+        <spring.boot.version>4.0.6</spring.boot.version>
         <langchain4j.version>1.14.1</langchain4j.version>
         <langchain4j.milvus.version>1.14.1-beta24</langchain4j.milvus.version>
     </properties>
