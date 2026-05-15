@@ -90,6 +90,10 @@ spec:
               value: rag,wiki,agent,gbrain,hyper
             - name: BOT_WECHAT_ALLOWED_MODES
               value: rag,wiki,agent,gbrain,hyper
+            - name: BOT_IDEMPOTENCY_ENABLED
+              value: "true"
+            - name: BOT_IDEMPOTENCY_TTL_SECONDS
+              value: "600"
           envFrom:
             - configMapRef:
                 name: hypermemory-config

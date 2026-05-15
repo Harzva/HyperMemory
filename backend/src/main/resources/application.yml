@@ -67,6 +67,9 @@ bot:
   default-mode: ${BOT_DEFAULT_MODE:hyper}
   signing-secret: ${BOT_SIGNING_SECRET:}
   timestamp-tolerance-seconds: ${BOT_TIMESTAMP_TOLERANCE_SECONDS:300}
+  idempotency:
+    enabled: ${BOT_IDEMPOTENCY_ENABLED:true}
+    ttl-seconds: ${BOT_IDEMPOTENCY_TTL_SECONDS:600}
   channels:
     feishu:
       enabled: ${BOT_FEISHU_ENABLED:false}
