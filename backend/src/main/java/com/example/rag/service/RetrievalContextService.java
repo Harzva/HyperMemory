@@ -7,6 +7,8 @@ import com.example.rag.repository.DocumentRepository;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -18,6 +20,8 @@ import java.util.Optional;
  */
 @Service
 public class RetrievalContextService {
+
+    private static final Logger log = LoggerFactory.getLogger(RetrievalContextService.class);
 
     private final EmbeddingModel embeddingModel;
     private final EmbeddingStore<?> embeddingStore;
@@ -52,6 +56,7 @@ public class RetrievalContextService {
                 appendRetrievedContext(contextBuilder, sourceNumber++, match.embeddingId());
             }
         } catch (Exception e) {
+            log.warn("Context retrieval failed: {}", e.getMessage());
             return "";
         }
         return contextBuilder.toString();

@@ -95,6 +95,7 @@ public class DocumentService {
         entity.setChunkCount(chunks.size());
         entity = documentRepository.save(entity);
 
+        int embeddedCount = 0;
         for (TextChunk chunk : chunks) {
             DocumentChunkEntity chunkEntity = new DocumentChunkEntity();
             chunkEntity.setDocument(entity);
@@ -108,10 +109,15 @@ public class DocumentService {
             try {
                 Embedding embedding = embeddingModel.embed(chunk.content()).content();
                 embeddingStore.add(String.valueOf(chunkEntity.getId()), embedding);
+                embeddedCount++;
                 log.info("Stored embedding for document {} chunk {}", entity.getId(), chunkEntity.getId());
             } catch (Exception e) {
                 log.error("Failed to embed document {} chunk {}: {}", entity.getId(), chunkEntity.getId(), e.getMessage());
             }
+        }
+
+        if (!chunks.isEmpty() && embeddedCount == 0) {
+            log.warn("Document {} has {} chunks but zero embeddings were stored", entity.getId(), chunks.size());
         }
 
         return entity;

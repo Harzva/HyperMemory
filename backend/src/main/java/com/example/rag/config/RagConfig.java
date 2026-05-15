@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RagConfig {
 
-    @Value("${openai.api-key:YOUR_OPENAI_KEY}")
+    @Value("${openai.api-key:replace-me}")
     private String openAiApiKey;
 
     @Value("${openai.chat-model:gpt-4o-mini}")
