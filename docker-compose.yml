@@ -93,7 +93,11 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-rag}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+      SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL:-false}
       SPRING_REDIS_HOST: redis
+      MANAGEMENT_HEALTH_SHOW_DETAILS: ${MANAGEMENT_HEALTH_SHOW_DETAILS:-never}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL:-INFO}
       MILVUS_HOST: milvus
       MILVUS_PORT: 19530
       MILVUS_COLLECTION_NAME: ${MILVUS_COLLECTION_NAME:-rag_collection}
@@ -121,6 +125,7 @@ services:
       BOT_WECHAT_TOKEN: ${BOT_WECHAT_TOKEN:-change-me}
       BOT_WECHAT_SIGNING_SECRET: ${BOT_WECHAT_SIGNING_SECRET:-change-me}
       BOT_WECHAT_ALLOWED_MODES: ${BOT_WECHAT_ALLOWED_MODES:-rag,wiki,agent,gbrain,hyper}
+      HYPERMEMORY_MAX_CONVERSATION_MESSAGES: ${HYPERMEMORY_MAX_CONVERSATION_MESSAGES:-20}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     healthcheck:
@@ -137,6 +142,11 @@ services:
       - backend
     ports:
       - "${FRONTEND_PORT:-3000}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
 
 volumes:
   mysql-data:

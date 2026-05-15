@@ -6,7 +6,9 @@ type: Opaque
 stringData:
   OPENAI_API_KEY: replace-me
   MYSQL_ROOT_PASSWORD: replace-me
+  SPRING_DATASOURCE_PASSWORD: replace-me
   MINIO_ROOT_PASSWORD: replace-me
+  MINIO_SECRET_KEY: replace-me
   BOT_SIGNING_SECRET: replace-me-long-random-secret
   BOT_FEISHU_VERIFICATION_TOKEN: replace-me
   BOT_FEISHU_SIGNING_SECRET: replace-me
@@ -14,6 +16,29 @@ stringData:
   BOT_DINGTALK_SIGNING_SECRET: replace-me
   BOT_WECHAT_TOKEN: replace-me
   BOT_WECHAT_SIGNING_SECRET: replace-me
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hypermemory-config
+data:
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rag?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+  SPRING_DATASOURCE_USERNAME: root
+  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SPRING_JPA_SHOW_SQL: "false"
+  SPRING_REDIS_HOST: redis
+  SPRING_REDIS_PORT: "6379"
+  MILVUS_HOST: milvus
+  MILVUS_PORT: "19530"
+  MILVUS_COLLECTION_NAME: rag_collection
+  MILVUS_EMBEDDING_DIMENSION: "1536"
+  MINIO_ENDPOINT: http://minio:9000
+  MINIO_ACCESS_KEY: minioadmin
+  MINIO_BUCKET: rag-bucket
+  OPENAI_CHAT_MODEL: gpt-4o-mini
+  OPENAI_EMBEDDING_MODEL: text-embedding-3-small
+  HYPERMEMORY_MAX_CONVERSATION_MESSAGES: "20"
+  MANAGEMENT_HEALTH_SHOW_DETAILS: never
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -29,10 +54,21 @@ spec:
       labels:
         app: hypermemory-backend
     spec:
+      terminationGracePeriodSeconds: 35
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: backend
           image: ghcr.io/harzva/hypermemory-backend:0.1.0
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 10001
           ports:
             - containerPort: 8080
           env:
@@ -55,8 +91,16 @@ spec:
             - name: BOT_WECHAT_ALLOWED_MODES
               value: rag,wiki,agent,gbrain,hyper
           envFrom:
+            - configMapRef:
+                name: hypermemory-config
             - secretRef:
                 name: hypermemory-secrets
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness

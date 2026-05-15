@@ -3,9 +3,9 @@
 ## Release Checklist
 
 1. Update screenshots if the UI changed.
-2. Run backend validation: `cd backend && mvn -B test`.
-3. Run frontend validation: `cd frontend && npm ci && npm run build && npm audit --audit-level=moderate`.
-4. Check local config: `cp .env.example .env && docker compose config`.
+2. Let GitHub Actions run backend validation with `mvn -B test`.
+3. Let GitHub Actions run frontend validation with `npm ci` and `npm run build`.
+4. Confirm the CI Docker image build and `docker compose config` jobs pass.
 5. Review secrets: `.env`, API keys, Bot tokens, and uploaded documents must not be committed.
 6. Tag the release after CI passes.
 
@@ -18,6 +18,7 @@
 | Operations | Check health, 5xx rate, p95 latency, JVM memory, and memory-mode failures. |
 | Memory quality | Re-run golden multi-turn examples before changing memory prompts or storage. |
 | Docs | Keep README, OpenAPI, Bot guide, and production gaps aligned with code. |
+| Deployability | Keep Dockerfiles, Compose, and Kubernetes manifests passing CI validation. |
 
 ## Alert Suggestions
 

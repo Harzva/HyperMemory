@@ -6,8 +6,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
     open-in-view: false
   redis:
     host: ${SPRING_REDIS_HOST:redis}
@@ -47,11 +47,20 @@ management:
         include: health,info,metrics,prometheus
   endpoint:
     health:
+      show-details: ${MANAGEMENT_HEALTH_SHOW_DETAILS:when_authorized}
       probes:
         enabled: true
   metrics:
     tags:
       application: hypermemory
+
+logging:
+  level:
+    com.example.rag: ${APP_LOG_LEVEL:INFO}
+    org.hibernate.SQL: ${HIBERNATE_SQL_LOG_LEVEL:WARN}
+
+hypermemory:
+  max-conversation-messages: ${HYPERMEMORY_MAX_CONVERSATION_MESSAGES:20}
 
 bot:
   enabled: ${BOT_ENABLED:false}

@@ -5,10 +5,21 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MAVEN_OPTS: -Xmx768m -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=128m
+
 jobs:
   frontend:
     name: Frontend build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: frontend
@@ -25,6 +36,7 @@ jobs:
   backend:
     name: Backend test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: backend
@@ -40,7 +52,19 @@ jobs:
   compose:
     name: Docker Compose config
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - run: cp .env.example .env
       - run: docker compose config
+
+  docker:
+    name: Docker image build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [frontend, backend, compose]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker build --pull -t hypermemory-backend:${{ github.sha }} ./backend
+      - run: docker build --pull -t hypermemory-frontend:${{ github.sha }} ./frontend
