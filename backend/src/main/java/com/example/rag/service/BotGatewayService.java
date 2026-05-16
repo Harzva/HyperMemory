@@ -63,14 +63,14 @@ public class BotGatewayService {
         try {
             AnswerWithSources result;
             switch (mode) {
-                case "hyper" -> result = hyperMemoryService.queryWithSources(text);
-                case "wiki" -> result = wikiService.queryWithSources(text);
-                case "rag" -> result = ragService.askWithSources(conversationId, text);
+                case "hyper" -> result = hyperMemoryService.queryWithSources(text, tenantId);
+                case "wiki" -> result = wikiService.queryWithSources(text, tenantId);
+                case "rag" -> result = ragService.askWithSources(conversationId, text, tenantId);
                 case "agent" -> {
-                    return BotMessageResponse.success(channel, conversationId, mode, agentService.ask(text));
+                    return BotMessageResponse.success(channel, conversationId, mode, agentService.ask(text, tenantId));
                 }
                 case "gbrain" -> {
-                    return BotMessageResponse.success(channel, conversationId, mode, gBrainService.ask(text));
+                    return BotMessageResponse.success(channel, conversationId, mode, gBrainService.ask(text, tenantId));
                 }
                 default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported bot mode: " + mode);
             }

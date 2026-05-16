@@ -27,12 +27,12 @@ public class ChatController {
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<Flux<String>> chat(@Valid @RequestBody ChatRequest request) {
-        String result = ragService.ask(request.getConversationId(), request.getUserInput());
+        String result = ragService.ask(request.getConversationId(), request.getUserInput(), request.getTenantId());
         return ResponseEntity.ok(Flux.just(result));
     }
 
     @PostMapping("/with-sources")
     public ResponseEntity<AnswerWithSources> chatWithSources(@Valid @RequestBody ChatRequest request) {
-        return ResponseEntity.ok(ragService.askWithSources(request.getConversationId(), request.getUserInput()));
+        return ResponseEntity.ok(ragService.askWithSources(request.getConversationId(), request.getUserInput(), request.getTenantId()));
     }
 }

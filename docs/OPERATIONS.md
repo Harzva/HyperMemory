@@ -30,6 +30,10 @@ Set `OPENAI_API_KEY` in `.env` before using model-backed chat.
 | Hyper with sources | `/api/hyper/chat/with-sources` | `/api/hyper/upload` | Same as Hyper, returns `AnswerWithSources` JSON with source citations. |
 | Bot Gateway | `/api/bot/{channel}/callback` | N/A | Normalized Feishu, DingTalk, and WeChat callbacks. |
 
+## Tenant Scoping
+
+Uploads accept an optional `tenantId` form field. Chat and `with-sources` JSON requests accept an optional `tenantId` body field. Missing values are normalized to `default`; retrieval, wiki fallback pages, and HyperMemory conversation memory are scoped by tenant.
+
 ## Runtime Configuration
 
 | Variable | Purpose |
@@ -64,6 +68,7 @@ curl -i http://localhost:8080/actuator/health
 - Replace in-memory wiki and hyper state with durable persistence.
 - Decide whether the final runtime should stay on MySQL/Milvus/MinIO or move to SQLite-only retrieval.
 - ~~Add idempotency storage for Bot message IDs before enabling platform retries.~~ Done: `BotIdempotencyService` acquires a Redis `SETNX` key by `(tenantId, channel, messageId)` before dispatch. Concurrent duplicates are ignored, successful messages keep the key until TTL expiry, and processing exceptions release the key so platform retries can run again. Missing `tenantId` defaults to `"default"`. Set `BOT_IDEMPOTENCY_ENABLED=false` to disable.
-- ~~Add source citations and retrieval traces in API responses.~~ Done: `AnswerWithSources` DTO returned from `/api/chat/with-sources`, `/api/wiki/chat/with-sources`, and `/api/hyper/chat/with-sources`. Bot gateway responses (`BotMessageResponse`) now include an optional `sources` list for `rag`, `wiki`, and `hyper` modes. `agent` and `gbrain` modes remain answer-only.
-- Add RBAC around `tenantId`, allowed modes, and document namespace.
+- ~~Add source citations and retrieval traces in API responses.~~ Done: `AnswerWithSources` DTO returned from `/api/chat/with-sources`, `/api/wiki/chat/with-sources`, and `/api/hyper/chat/with-sources`. Bot gateway responses (`BotMessageResponse`) now include an optional `sources` list for `rag`, `wiki`, and `hyper` modes. `agent` and `gbrain` modes remain answer-only but tenant-scoped.
+- ~~Add tenant-scoped retrieval boundary.~~ Done: uploads persist `tenantId`, RAG/Wiki/Agent/GBrain/Hyper/Bot retrieval filters hydrated chunks by tenant, HyperMemory conversation memory is tenant-bucketed, and missing tenant values default to `default`.
+- Add RBAC for user-to-tenant membership and admin-only document namespace management.
 - Add gateway rate limits before exposing public Bot endpoints.

@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -62,6 +63,10 @@ public class DocumentService {
      * metadata rows, so retrieval can hydrate real text for the final prompt.
      */
     public DocumentEntity uploadDocument(MultipartFile file) throws IOException {
+        return uploadDocument(file, null);
+    }
+
+    public DocumentEntity uploadDocument(MultipartFile file, String tenantId) throws IOException {
         ensureBucketExists();
 
         byte[] fileBytes = file.getBytes();
@@ -88,6 +93,7 @@ public class DocumentService {
         entity.setContentType(contentType);
         entity.setObjectKey(objectKey);
         entity.setCreatedAt(LocalDateTime.now());
+        entity.setTenantId(normalizeTenantId(tenantId));
         entity = documentRepository.save(entity);
 
         String content = extractText(fileBytes, filename);
@@ -170,6 +176,12 @@ public class DocumentService {
         } catch (Exception e) {
             log.error("Error ensuring bucket existence: {}", e.getMessage());
         }
+    }
+
+    private String normalizeTenantId(String tenantId) {
+        return tenantId == null || tenantId.isBlank()
+                ? "default"
+                : tenantId.trim().toLowerCase(Locale.ROOT);
     }
 
     private record TextChunk(int index, int start, int end, String content) {

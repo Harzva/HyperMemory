@@ -26,7 +26,7 @@ public class AgentChatController {
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<Flux<String>> chat(@Valid @RequestBody ChatRequest request) {
-        String result = agentService.ask(request.getUserInput());
+        String result = agentService.ask(request.getUserInput(), request.getTenantId());
         return ResponseEntity.ok(Flux.just(result));
     }
 }

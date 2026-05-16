@@ -49,8 +49,9 @@ public class HyperFileController {
      * @throws IOException if the file cannot be read
      */
     @PostMapping("/upload")
-    public ResponseEntity<DocumentEntity> uploadToHyper(@RequestParam("file") MultipartFile file) throws IOException {
-        DocumentEntity entity = documentService.uploadDocument(file);
+    public ResponseEntity<DocumentEntity> uploadToHyper(@RequestParam("file") MultipartFile file,
+                                                        @RequestParam(value = "tenantId", required = false) String tenantId) throws IOException {
+        DocumentEntity entity = documentService.uploadDocument(file, tenantId);
         String content;
         try {
             content = new String(file.getBytes(), StandardCharsets.UTF_8);

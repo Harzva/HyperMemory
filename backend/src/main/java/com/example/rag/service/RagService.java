@@ -35,10 +35,18 @@ public class RagService {
         return askWithSources(conversationId, userInput).getAnswer();
     }
 
+    public String ask(String conversationId, String userInput, String tenantId) {
+        return askWithSources(conversationId, userInput, tenantId).getAnswer();
+    }
+
     public AnswerWithSources askWithSources(String conversationId, String userInput) {
+        return askWithSources(conversationId, userInput, null);
+    }
+
+    public AnswerWithSources askWithSources(String conversationId, String userInput, String tenantId) {
         chatMemory.add(UserMessage.from(userInput));
 
-        RetrievalContextService.RetrievalResult result = retrievalContextService.retrieve(userInput, TOP_K);
+        RetrievalContextService.RetrievalResult result = retrievalContextService.retrieve(userInput, TOP_K, tenantId);
         String context = result.getFormattedContext().isBlank()
                 ? "No relevant knowledge chunks were retrieved."
                 : result.getFormattedContext();

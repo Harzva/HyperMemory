@@ -27,12 +27,12 @@ public class LLMWikiChatController {
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<Flux<String>> chat(@Valid @RequestBody ChatRequest request) {
-        String result = llmWikiService.query(request.getUserInput());
+        String result = llmWikiService.query(request.getUserInput(), request.getTenantId());
         return ResponseEntity.ok(Flux.just(result));
     }
 
     @PostMapping("/with-sources")
     public ResponseEntity<AnswerWithSources> chatWithSources(@Valid @RequestBody ChatRequest request) {
-        return ResponseEntity.ok(llmWikiService.queryWithSources(request.getUserInput()));
+        return ResponseEntity.ok(llmWikiService.queryWithSources(request.getUserInput(), request.getTenantId()));
     }
 }

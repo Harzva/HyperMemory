@@ -30,6 +30,10 @@ public class GBrainService {
         return wikiService.query(question);
     }
 
+    public String ask(String question, String tenantId) {
+        return wikiService.query(question, tenantId);
+    }
+
     public void runAllSkills() {
         log.info("Wiki coverage: {} pages, {} characters",
                 wikiService.pageCount(),

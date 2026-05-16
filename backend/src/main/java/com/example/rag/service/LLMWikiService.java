@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -20,7 +21,7 @@ public class LLMWikiService {
     private static final int TOP_K = 5;
 
     private final RetrievalContextService retrievalContextService;
-    private final Map<Long, String> wikiPages = new ConcurrentHashMap<>();
+    private final Map<String, Map<Long, String>> wikiPagesByTenant = new ConcurrentHashMap<>();
 
     public LLMWikiService(RetrievalContextService retrievalContextService) {
         this.retrievalContextService = retrievalContextService;
@@ -42,19 +43,31 @@ public class LLMWikiService {
         } else {
             page.append("(no extractable text available)\n");
         }
-        wikiPages.put(document.getId(), page.toString());
+        wikiPagesByTenant
+                .computeIfAbsent(normalizeTenantId(document.getTenantId()), key -> new ConcurrentHashMap<>())
+                .put(document.getId(), page.toString());
     }
 
     public String query(String question) {
         return queryWithSources(question).getAnswer();
     }
 
+    public String query(String question, String tenantId) {
+        return queryWithSources(question, tenantId).getAnswer();
+    }
+
     public AnswerWithSources queryWithSources(String question) {
-        RetrievalContextService.RetrievalResult result = retrievalContextService.retrieve(question, TOP_K);
+        return queryWithSources(question, null);
+    }
+
+    public AnswerWithSources queryWithSources(String question, String tenantId) {
+        String normalizedTenantId = normalizeTenantId(tenantId);
+        RetrievalContextService.RetrievalResult result = retrievalContextService.retrieve(question, TOP_K, normalizedTenantId);
         if (!result.getFormattedContext().isBlank()) {
             return AnswerWithSources.of("## Retrieved Wiki Context\n\n" + result.getFormattedContext(), result.getCitations());
         }
 
+        Map<Long, String> wikiPages = wikiPagesByTenant.getOrDefault(normalizedTenantId, Collections.emptyMap());
         if (wikiPages.isEmpty()) {
             return AnswerWithSources.of("No wiki pages or retrieved context are available yet.", Collections.emptyList());
         }
@@ -65,10 +78,19 @@ public class LLMWikiService {
     }
 
     public int pageCount() {
-        return wikiPages.size();
+        return wikiPagesByTenant.values().stream().mapToInt(Map::size).sum();
     }
 
     public int totalPageCharacters() {
-        return wikiPages.values().stream().mapToInt(String::length).sum();
+        return wikiPagesByTenant.values().stream()
+                .flatMap(pages -> pages.values().stream())
+                .mapToInt(String::length)
+                .sum();
+    }
+
+    private String normalizeTenantId(String tenantId) {
+        return tenantId == null || tenantId.isBlank()
+                ? "default"
+                : tenantId.trim().toLowerCase(Locale.ROOT);
     }
 }

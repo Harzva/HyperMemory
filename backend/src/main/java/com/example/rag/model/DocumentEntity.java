@@ -2,6 +2,7 @@ package com.example.rag.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 /**
  * JPA entity representing a document stored in the knowledge base.
@@ -41,6 +42,10 @@ public class DocumentEntity {
     /** Number of text chunks created during ingestion. */
     @Column(name = "chunk_count", nullable = false)
     private int chunkCount;
+
+    /** Tenant that owns this document. Defaults to "default" when not provided. */
+    @Column(name = "tenant_id", nullable = false, length = 128, columnDefinition = "varchar(128) default 'default'")
+    private String tenantId = "default";
 
     public Long getId() {
         return id;
@@ -88,5 +93,25 @@ public class DocumentEntity {
 
     public void setChunkCount(int chunkCount) {
         this.chunkCount = chunkCount;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = normalizeTenantId(tenantId);
+    }
+
+    @PrePersist
+    @PreUpdate
+    void normalizeTenant() {
+        tenantId = normalizeTenantId(tenantId);
+    }
+
+    private String normalizeTenantId(String value) {
+        return value == null || value.isBlank()
+                ? "default"
+                : value.trim().toLowerCase(Locale.ROOT);
     }
 }

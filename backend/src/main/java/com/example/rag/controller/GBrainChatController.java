@@ -29,7 +29,7 @@ public class GBrainChatController {
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<Flux<String>> chat(@Valid @RequestBody ChatRequest request) {
-        String result = gBrainService.ask(request.getUserInput());
+        String result = gBrainService.ask(request.getUserInput(), request.getTenantId());
         return ResponseEntity.ok(Flux.just(result));
     }
 }

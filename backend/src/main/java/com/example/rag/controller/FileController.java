@@ -27,8 +27,9 @@ public class FileController {
      * form-data under the "file" field.
      */
     @PostMapping
-    public ResponseEntity<DocumentEntity> upload(@RequestParam("file") MultipartFile file) throws IOException {
-        DocumentEntity saved = documentService.uploadDocument(file);
+    public ResponseEntity<DocumentEntity> upload(@RequestParam("file") MultipartFile file,
+                                                 @RequestParam(value = "tenantId", required = false) String tenantId) throws IOException {
+        DocumentEntity saved = documentService.uploadDocument(file, tenantId);
         return ResponseEntity.ok(saved);
     }
 }

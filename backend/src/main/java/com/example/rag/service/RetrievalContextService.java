@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -60,10 +61,15 @@ public class RetrievalContextService {
     }
 
     public RetrievalResult retrieve(String query, int topK) {
+        return retrieve(query, topK, null);
+    }
+
+    public RetrievalResult retrieve(String query, int topK, String tenantId) {
         if (query == null || query.isBlank() || topK <= 0) {
             return new RetrievalResult("", new ArrayList<>());
         }
 
+        String normalizedTenantId = normalizeTenantId(tenantId);
         StringBuilder contextBuilder = new StringBuilder();
         List<SourceCitation> citations = new ArrayList<>();
         try {
@@ -75,7 +81,8 @@ public class RetrievalContextService {
             var matches = embeddingStore.search(searchRequest).matches();
             int sourceNumber = 1;
             for (var match : matches) {
-                collectRetrievedResult(contextBuilder, citations, sourceNumber++, match.embeddingId());
+                int accepted = collectRetrievedResult(contextBuilder, citations, sourceNumber, match.embeddingId(), normalizedTenantId);
+                sourceNumber += accepted;
             }
         } catch (Exception e) {
             log.warn("Context retrieval failed: {}", e.getMessage());
@@ -84,17 +91,20 @@ public class RetrievalContextService {
         return new RetrievalResult(contextBuilder.toString(), citations);
     }
 
-    private void collectRetrievedResult(StringBuilder contextBuilder, List<SourceCitation> citations,
-                                        int sourceNumber, String itemId) {
+    private int collectRetrievedResult(StringBuilder contextBuilder, List<SourceCitation> citations,
+                                       int sourceNumber, String itemId, String normalizedTenantId) {
         Long id = parseId(itemId);
         if (id == null) {
-            return;
+            return 0;
         }
 
         Optional<DocumentChunkEntity> chunk = documentChunkRepository.findById(id);
         if (chunk.isPresent()) {
             DocumentChunkEntity entity = chunk.get();
             DocumentEntity document = entity.getDocument();
+            if (!normalizedTenantId.equals(normalizeTenantId(document.getTenantId()))) {
+                return 0;
+            }
             contextBuilder
                     .append("[Source ").append(sourceNumber).append("] ")
                     .append(document.getFilename())
@@ -106,10 +116,15 @@ public class RetrievalContextService {
             String preview = content.length() > 200 ? content.substring(0, 200) + "..." : content;
             citations.add(new SourceCitation(sourceNumber, document.getId(),
                     document.getFilename(), entity.getChunkIndex(), preview));
-            return;
+            return 1;
         }
 
-        documentRepository.findById(id).ifPresent(document -> {
+        Optional<DocumentEntity> docOpt = documentRepository.findById(id);
+        if (docOpt.isPresent()) {
+            DocumentEntity document = docOpt.get();
+            if (!normalizedTenantId.equals(normalizeTenantId(document.getTenantId()))) {
+                return 0;
+            }
             contextBuilder
                     .append("[Source ").append(sourceNumber).append("] ")
                     .append(document.getFilename())
@@ -118,11 +133,17 @@ public class RetrievalContextService {
                     .append("\n\n");
             citations.add(new SourceCitation(sourceNumber, document.getId(),
                     document.getFilename(), -1, "(legacy entry — re-upload for chunk retrieval)"));
-        });
+            return 1;
+        }
+        return 0;
     }
 
     public String retrieveContext(String query, int topK) {
         return retrieve(query, topK).getFormattedContext();
+    }
+
+    public String retrieveContext(String query, int topK, String tenantId) {
+        return retrieve(query, topK, tenantId).getFormattedContext();
     }
 
     private Long parseId(String itemId) {
@@ -131,5 +152,11 @@ public class RetrievalContextService {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private String normalizeTenantId(String tenantId) {
+        return tenantId == null || tenantId.isBlank()
+                ? "default"
+                : tenantId.trim().toLowerCase(Locale.ROOT);
     }
 }

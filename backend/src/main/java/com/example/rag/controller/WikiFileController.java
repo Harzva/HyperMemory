@@ -32,8 +32,9 @@ public class WikiFileController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<DocumentEntity> uploadToWiki(@RequestParam("file") MultipartFile file) throws IOException {
-        DocumentEntity entity = documentService.uploadDocument(file);
+    public ResponseEntity<DocumentEntity> uploadToWiki(@RequestParam("file") MultipartFile file,
+                                                       @RequestParam(value = "tenantId", required = false) String tenantId) throws IOException {
+        DocumentEntity entity = documentService.uploadDocument(file, tenantId);
 
         String content;
         try {

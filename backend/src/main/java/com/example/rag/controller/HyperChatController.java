@@ -32,18 +32,18 @@ public class HyperChatController {
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<Flux<String>> chat(@Valid @RequestBody ChatRequest request) {
         String userMessage = "User: " + request.getUserInput();
-        hyperMemoryService.rememberMessage(userMessage);
-        String answer = hyperMemoryService.query(request.getUserInput());
-        hyperMemoryService.rememberMessage("Assistant: " + answer);
+        hyperMemoryService.rememberMessage(userMessage, request.getTenantId());
+        String answer = hyperMemoryService.query(request.getUserInput(), request.getTenantId());
+        hyperMemoryService.rememberMessage("Assistant: " + answer, request.getTenantId());
         return ResponseEntity.ok(Flux.just(answer));
     }
 
     @PostMapping("/with-sources")
     public ResponseEntity<AnswerWithSources> chatWithSources(@Valid @RequestBody ChatRequest request) {
         String userMessage = "User: " + request.getUserInput();
-        hyperMemoryService.rememberMessage(userMessage);
-        AnswerWithSources result = hyperMemoryService.queryWithSources(request.getUserInput());
-        hyperMemoryService.rememberMessage("Assistant: " + result.getAnswer());
+        hyperMemoryService.rememberMessage(userMessage, request.getTenantId());
+        AnswerWithSources result = hyperMemoryService.queryWithSources(request.getUserInput(), request.getTenantId());
+        hyperMemoryService.rememberMessage("Assistant: " + result.getAnswer(), request.getTenantId());
         return ResponseEntity.ok(result);
     }
 }
