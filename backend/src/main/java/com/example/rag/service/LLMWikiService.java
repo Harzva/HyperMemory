@@ -1,8 +1,11 @@
 package com.example.rag.service;
 
 import com.example.rag.dto.AnswerWithSources;
+import com.example.rag.dto.SourceCitation;
 import com.example.rag.model.DocumentEntity;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 import java.util.Collections;
 import java.util.Map;
@@ -21,10 +24,13 @@ public class LLMWikiService {
     private static final int TOP_K = 5;
 
     private final RetrievalContextService retrievalContextService;
+    private final QaMetricsService qaMetricsService;
     private final Map<String, Map<Long, String>> wikiPagesByTenant = new ConcurrentHashMap<>();
 
-    public LLMWikiService(RetrievalContextService retrievalContextService) {
+    public LLMWikiService(RetrievalContextService retrievalContextService,
+                          QaMetricsService qaMetricsService) {
         this.retrievalContextService = retrievalContextService;
+        this.qaMetricsService = qaMetricsService;
     }
 
     public void ingest(DocumentEntity document, String content) {
@@ -61,20 +67,25 @@ public class LLMWikiService {
     }
 
     public AnswerWithSources queryWithSources(String question, String tenantId) {
-        String normalizedTenantId = normalizeTenantId(tenantId);
-        RetrievalContextService.RetrievalResult result = retrievalContextService.retrieve(question, TOP_K, normalizedTenantId);
-        if (!result.getFormattedContext().isBlank()) {
-            return AnswerWithSources.of("## Retrieved Wiki Context\n\n" + result.getFormattedContext(), result.getCitations());
-        }
+        AnswerWithSources result = qaMetricsService.recordOperation("queryWithSources", "llm-wiki", tenantId, () -> {
+            String normalizedTenantId = normalizeTenantId(tenantId);
+            RetrievalContextService.RetrievalResult retrieval = retrievalContextService.retrieve(question, TOP_K, normalizedTenantId);
+            if (!retrieval.getFormattedContext().isBlank()) {
+                return AnswerWithSources.of("## Retrieved Wiki Context\n\n" + retrieval.getFormattedContext(), retrieval.getCitations());
+            }
 
-        Map<Long, String> wikiPages = wikiPagesByTenant.getOrDefault(normalizedTenantId, Collections.emptyMap());
-        if (wikiPages.isEmpty()) {
-            return AnswerWithSources.of("No wiki pages or retrieved context are available yet.", Collections.emptyList());
-        }
+            Map<Long, String> wikiPages = wikiPagesByTenant.getOrDefault(normalizedTenantId, Collections.emptyMap());
+            if (wikiPages.isEmpty()) {
+                return AnswerWithSources.of("No wiki pages or retrieved context are available yet.", Collections.emptyList());
+            }
 
-        return AnswerWithSources.of(
-                wikiPages.values().stream().collect(Collectors.joining("\n\n---\n\n")),
-                Collections.emptyList());
+            return AnswerWithSources.of(
+                    wikiPages.values().stream().collect(Collectors.joining("\n\n---\n\n")),
+                    Collections.emptyList());
+        });
+        List<SourceCitation> sources = result.getSources();
+        qaMetricsService.recordSourceCount("llm-wiki", tenantId, sources == null ? 0 : sources.size());
+        return result;
     }
 
     public int pageCount() {

@@ -53,6 +53,9 @@ management:
   metrics:
     tags:
       application: hypermemory
+    distribution:
+      percentiles-histogram:
+        campus.qa.operation.duration: true
 
 logging:
   level:

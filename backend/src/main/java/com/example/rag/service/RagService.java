@@ -1,12 +1,15 @@
 package com.example.rag.service;
 
 import com.example.rag.dto.AnswerWithSources;
+import com.example.rag.dto.SourceCitation;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * High-level RAG service. It retrieves grounded chunk text through
@@ -21,14 +24,17 @@ public class RagService {
     private final ChatModel chatModel;
     private final ChatMemory chatMemory;
     private final RetrievalContextService retrievalContextService;
+    private final QaMetricsService qaMetricsService;
 
     @Autowired
     public RagService(ChatModel chatModel,
                       ChatMemory chatMemory,
-                      RetrievalContextService retrievalContextService) {
+                      RetrievalContextService retrievalContextService,
+                      QaMetricsService qaMetricsService) {
         this.chatModel = chatModel;
         this.chatMemory = chatMemory;
         this.retrievalContextService = retrievalContextService;
+        this.qaMetricsService = qaMetricsService;
     }
 
     public String ask(String conversationId, String userInput) {
@@ -44,26 +50,31 @@ public class RagService {
     }
 
     public AnswerWithSources askWithSources(String conversationId, String userInput, String tenantId) {
-        chatMemory.add(UserMessage.from(userInput));
+        AnswerWithSources result = qaMetricsService.recordOperation("askWithSources", "rag", tenantId, () -> {
+            chatMemory.add(UserMessage.from(userInput));
 
-        RetrievalContextService.RetrievalResult result = retrievalContextService.retrieve(userInput, TOP_K, tenantId);
-        String context = result.getFormattedContext().isBlank()
-                ? "No relevant knowledge chunks were retrieved."
-                : result.getFormattedContext();
+            RetrievalContextService.RetrievalResult retrieval = retrievalContextService.retrieve(userInput, TOP_K, tenantId);
+            String context = retrieval.getFormattedContext().isBlank()
+                    ? "No relevant knowledge chunks were retrieved."
+                    : retrieval.getFormattedContext();
 
-        String prompt = """
-                Answer the user question using only the retrieved knowledge chunks below.
-                If the chunks do not contain enough evidence, say what is missing and do not fabricate.
+            String prompt = """
+                    Answer the user question using only the retrieved knowledge chunks below.
+                    If the chunks do not contain enough evidence, say what is missing and do not fabricate.
 
-                Retrieved knowledge chunks:
-                %s
+                    Retrieved knowledge chunks:
+                    %s
 
-                User question:
-                %s
-                """.formatted(context, userInput);
+                    User question:
+                    %s
+                    """.formatted(context, userInput);
 
-        String answer = chatModel.chat(prompt);
-        chatMemory.add(AiMessage.from(answer));
-        return AnswerWithSources.of(answer, result.getCitations());
+            String answer = chatModel.chat(prompt);
+            chatMemory.add(AiMessage.from(answer));
+            return AnswerWithSources.of(answer, retrieval.getCitations());
+        });
+        List<SourceCitation> sources = result.getSources();
+        qaMetricsService.recordSourceCount("rag", tenantId, sources == null ? 0 : sources.size());
+        return result;
     }
 }

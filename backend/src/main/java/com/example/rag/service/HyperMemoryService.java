@@ -1,6 +1,7 @@
 package com.example.rag.service;
 
 import com.example.rag.dto.AnswerWithSources;
+import com.example.rag.dto.SourceCitation;
 import com.example.rag.model.DocumentEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,13 +25,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HyperMemoryService {
 
     private final LLMWikiService wikiService;
+    private final QaMetricsService qaMetricsService;
     private final Map<String, Deque<String>> conversationMemoryByTenant = new ConcurrentHashMap<>();
     private final int maxConversationMessages;
 
     @Autowired
     public HyperMemoryService(LLMWikiService wikiService,
+                              QaMetricsService qaMetricsService,
                               @Value("${hypermemory.max-conversation-messages:20}") int maxConversationMessages) {
         this.wikiService = wikiService;
+        this.qaMetricsService = qaMetricsService;
         this.maxConversationMessages = Math.max(1, maxConversationMessages);
     }
 
@@ -77,17 +81,22 @@ public class HyperMemoryService {
     }
 
     public AnswerWithSources queryWithSources(String question, String tenantId) {
-        String normalizedTenantId = normalizeTenantId(tenantId);
-        AnswerWithSources wiki = wikiService.queryWithSources(question, normalizedTenantId);
-        StringBuilder answer = new StringBuilder(wiki.getAnswer());
-        List<String> recentMessages = new ArrayList<>(memoryForTenant(normalizedTenantId));
-        if (!recentMessages.isEmpty()) {
-            answer.append("\n\n[Conversation Memory]\n");
-            for (String message : recentMessages) {
-                answer.append(message).append("\n");
+        AnswerWithSources result = qaMetricsService.recordOperation("queryWithSources", "hyper", tenantId, () -> {
+            String normalizedTenantId = normalizeTenantId(tenantId);
+            AnswerWithSources wiki = wikiService.queryWithSources(question, normalizedTenantId);
+            StringBuilder answer = new StringBuilder(wiki.getAnswer());
+            List<String> recentMessages = new ArrayList<>(memoryForTenant(normalizedTenantId));
+            if (!recentMessages.isEmpty()) {
+                answer.append("\n\n[Conversation Memory]\n");
+                for (String message : recentMessages) {
+                    answer.append(message).append("\n");
+                }
             }
-        }
-        return AnswerWithSources.of(answer.toString(), wiki.getSources());
+            return AnswerWithSources.of(answer.toString(), wiki.getSources());
+        });
+        List<SourceCitation> sources = result.getSources();
+        qaMetricsService.recordSourceCount("hyper", tenantId, sources == null ? 0 : sources.size());
+        return result;
     }
 
     private Deque<String> memoryForTenant(String tenantId) {

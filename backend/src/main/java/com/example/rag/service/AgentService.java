@@ -18,10 +18,13 @@ public class AgentService {
 
     private final CampusAssistant assistant;
     private final CampusTools campusTools;
+    private final QaMetricsService qaMetricsService;
 
     public AgentService(ChatModel chatModel,
-                        RetrievalContextService retrievalContextService) {
+                        RetrievalContextService retrievalContextService,
+                        QaMetricsService qaMetricsService) {
         this.campusTools = new CampusTools(retrievalContextService);
+        this.qaMetricsService = qaMetricsService;
         this.assistant = AiServices.builder(CampusAssistant.class)
                 .chatModel(chatModel)
                 .systemMessage("""
@@ -38,12 +41,14 @@ public class AgentService {
     }
 
     public String ask(String question, String tenantId) {
-        campusTools.setTenantId(tenantId);
-        try {
-            return assistant.chat(question);
-        } finally {
-            campusTools.clearTenantId();
-        }
+        return qaMetricsService.recordOperation("ask", "agent", tenantId, () -> {
+            campusTools.setTenantId(tenantId);
+            try {
+                return assistant.chat(question);
+            } finally {
+                campusTools.clearTenantId();
+            }
+        });
     }
 
     private interface CampusAssistant {

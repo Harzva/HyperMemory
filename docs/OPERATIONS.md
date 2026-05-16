@@ -65,6 +65,33 @@ See [Bot Integration Guide](BOT-INTEGRATION.md) for signed requests. A valid cal
 curl -i http://localhost:8080/actuator/health
 ```
 
+## Business Metrics
+
+Custom Prometheus metrics are exposed at `/actuator/prometheus` alongside the default Spring Boot metrics.
+
+| Metric | Type | Tags | Description |
+| --- | --- | --- | --- |
+| `campus.qa.operation.requests` | Counter | `operation`, `mode`, `status`, `tenant_scope` | Total QA operation attempts. `status` is `success` or `error`. |
+| `campus.qa.operation.duration` | Timer | `operation`, `mode`, `status`, `tenant_scope` | Latency distribution per QA operation. |
+| `campus.qa.sources.count` | DistributionSummary | `mode`, `tenant_scope` | Number of source citations returned per successful call. |
+
+`mode` values: `rag`, `llm-wiki`, `agent`, `gbrain`, `hyper`. `tenant_scope` is `default` for blank or `default` tenants, `custom` otherwise.
+
+Example Prometheus queries:
+
+```promql
+# P95 latency by mode
+histogram_quantile(0.95, sum by (le, mode) (rate(campus_qa_operation_duration_seconds_bucket[5m])))
+
+# Error rate by mode
+sum by (mode) (rate(campus_qa_operation_requests_total{status="error"}[5m]))
+  / sum by (mode) (rate(campus_qa_operation_requests_total[5m]))
+
+# Average source count by mode
+sum by (mode) (rate(campus_qa_sources_count_sum[5m]))
+  / sum by (mode) (rate(campus_qa_sources_count_count[5m]))
+```
+
 ## Production Checklist
 
 - Keep HyperMemory as the single final memory aggregation layer.

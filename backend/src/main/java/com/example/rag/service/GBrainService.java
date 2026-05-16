@@ -17,13 +17,16 @@ public class GBrainService {
     private static final Logger log = LoggerFactory.getLogger(GBrainService.class);
 
     private final LLMWikiService wikiService;
+    private final QaMetricsService qaMetricsService;
     private final List<String> skillNames = List.of(
             "WikiCoverageSnapshot",
             "MemoryIndexHealthCheck"
     );
 
-    public GBrainService(LLMWikiService wikiService) {
+    public GBrainService(LLMWikiService wikiService,
+                         QaMetricsService qaMetricsService) {
         this.wikiService = wikiService;
+        this.qaMetricsService = qaMetricsService;
     }
 
     public String ask(String question) {
@@ -31,7 +34,8 @@ public class GBrainService {
     }
 
     public String ask(String question, String tenantId) {
-        return wikiService.query(question, tenantId);
+        return qaMetricsService.recordOperation("ask", "gbrain", tenantId, () ->
+                wikiService.query(question, tenantId));
     }
 
     public void runAllSkills() {
