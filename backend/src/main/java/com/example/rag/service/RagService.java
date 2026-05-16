@@ -1,5 +1,6 @@
 package com.example.rag.service;
 
+import com.example.rag.dto.AnswerWithSources;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
@@ -31,12 +32,16 @@ public class RagService {
     }
 
     public String ask(String conversationId, String userInput) {
+        return askWithSources(conversationId, userInput).getAnswer();
+    }
+
+    public AnswerWithSources askWithSources(String conversationId, String userInput) {
         chatMemory.add(UserMessage.from(userInput));
 
-        String retrievedContext = retrievalContextService.retrieveContext(userInput, TOP_K);
-        String context = retrievedContext.isBlank()
+        RetrievalContextService.RetrievalResult result = retrievalContextService.retrieve(userInput, TOP_K);
+        String context = result.getFormattedContext().isBlank()
                 ? "No relevant knowledge chunks were retrieved."
-                : retrievedContext;
+                : result.getFormattedContext();
 
         String prompt = """
                 Answer the user question using only the retrieved knowledge chunks below.
@@ -51,6 +56,6 @@ public class RagService {
 
         String answer = chatModel.chat(prompt);
         chatMemory.add(AiMessage.from(answer));
-        return answer;
+        return AnswerWithSources.of(answer, result.getCitations());
     }
 }

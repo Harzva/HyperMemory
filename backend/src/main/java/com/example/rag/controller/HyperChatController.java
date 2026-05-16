@@ -1,5 +1,6 @@
 package com.example.rag.controller;
 
+import com.example.rag.dto.AnswerWithSources;
 import com.example.rag.dto.ChatRequest;
 import com.example.rag.service.HyperMemoryService;
 import jakarta.validation.Valid;
@@ -35,5 +36,14 @@ public class HyperChatController {
         String answer = hyperMemoryService.query(request.getUserInput());
         hyperMemoryService.rememberMessage("Assistant: " + answer);
         return ResponseEntity.ok(Flux.just(answer));
+    }
+
+    @PostMapping("/with-sources")
+    public ResponseEntity<AnswerWithSources> chatWithSources(@Valid @RequestBody ChatRequest request) {
+        String userMessage = "User: " + request.getUserInput();
+        hyperMemoryService.rememberMessage(userMessage);
+        AnswerWithSources result = hyperMemoryService.queryWithSources(request.getUserInput());
+        hyperMemoryService.rememberMessage("Assistant: " + result.getAnswer());
+        return ResponseEntity.ok(result);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.rag.controller;
 
+import com.example.rag.dto.AnswerWithSources;
 import com.example.rag.dto.ChatRequest;
 import com.example.rag.service.RagService;
 import jakarta.validation.Valid;
@@ -28,5 +29,10 @@ public class ChatController {
     public ResponseEntity<Flux<String>> chat(@Valid @RequestBody ChatRequest request) {
         String result = ragService.ask(request.getConversationId(), request.getUserInput());
         return ResponseEntity.ok(Flux.just(result));
+    }
+
+    @PostMapping("/with-sources")
+    public ResponseEntity<AnswerWithSources> chatWithSources(@Valid @RequestBody ChatRequest request) {
+        return ResponseEntity.ok(ragService.askWithSources(request.getConversationId(), request.getUserInput()));
     }
 }

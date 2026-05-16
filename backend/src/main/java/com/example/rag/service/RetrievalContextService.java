@@ -1,5 +1,6 @@
 package com.example.rag.service;
 
+import com.example.rag.dto.SourceCitation;
 import com.example.rag.model.DocumentChunkEntity;
 import com.example.rag.model.DocumentEntity;
 import com.example.rag.repository.DocumentChunkRepository;
@@ -11,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -38,12 +41,31 @@ public class RetrievalContextService {
         this.documentRepository = documentRepository;
     }
 
-    public String retrieveContext(String query, int topK) {
+    public static class RetrievalResult {
+        private final String formattedContext;
+        private final List<SourceCitation> citations;
+
+        public RetrievalResult(String formattedContext, List<SourceCitation> citations) {
+            this.formattedContext = formattedContext;
+            this.citations = citations;
+        }
+
+        public String getFormattedContext() {
+            return formattedContext;
+        }
+
+        public List<SourceCitation> getCitations() {
+            return citations;
+        }
+    }
+
+    public RetrievalResult retrieve(String query, int topK) {
         if (query == null || query.isBlank() || topK <= 0) {
-            return "";
+            return new RetrievalResult("", new ArrayList<>());
         }
 
         StringBuilder contextBuilder = new StringBuilder();
+        List<SourceCitation> citations = new ArrayList<>();
         try {
             var queryEmbedding = embeddingModel.embed(query).content();
             var searchRequest = EmbeddingSearchRequest.builder()
@@ -53,16 +75,17 @@ public class RetrievalContextService {
             var matches = embeddingStore.search(searchRequest).matches();
             int sourceNumber = 1;
             for (var match : matches) {
-                appendRetrievedContext(contextBuilder, sourceNumber++, match.embeddingId());
+                collectRetrievedResult(contextBuilder, citations, sourceNumber++, match.embeddingId());
             }
         } catch (Exception e) {
             log.warn("Context retrieval failed: {}", e.getMessage());
-            return "";
+            return new RetrievalResult("", new ArrayList<>());
         }
-        return contextBuilder.toString();
+        return new RetrievalResult(contextBuilder.toString(), citations);
     }
 
-    private void appendRetrievedContext(StringBuilder contextBuilder, int sourceNumber, String itemId) {
+    private void collectRetrievedResult(StringBuilder contextBuilder, List<SourceCitation> citations,
+                                        int sourceNumber, String itemId) {
         Long id = parseId(itemId);
         if (id == null) {
             return;
@@ -79,15 +102,27 @@ public class RetrievalContextService {
                     .append("\n")
                     .append(entity.getContent())
                     .append("\n\n");
+            String content = entity.getContent() == null ? "" : entity.getContent();
+            String preview = content.length() > 200 ? content.substring(0, 200) + "..." : content;
+            citations.add(new SourceCitation(sourceNumber, document.getId(),
+                    document.getFilename(), entity.getChunkIndex(), preview));
             return;
         }
 
-        documentRepository.findById(id).ifPresent(document -> contextBuilder
-                .append("[Source ").append(sourceNumber).append("] ")
-                .append(document.getFilename())
-                .append("\n")
-                .append("Legacy vector entry points to document metadata only. Re-upload this file to create searchable text chunks.")
-                .append("\n\n"));
+        documentRepository.findById(id).ifPresent(document -> {
+            contextBuilder
+                    .append("[Source ").append(sourceNumber).append("] ")
+                    .append(document.getFilename())
+                    .append("\n")
+                    .append("Legacy vector entry points to document metadata only. Re-upload this file to create searchable text chunks.")
+                    .append("\n\n");
+            citations.add(new SourceCitation(sourceNumber, document.getId(),
+                    document.getFilename(), -1, "(legacy entry — re-upload for chunk retrieval)"));
+        });
+    }
+
+    public String retrieveContext(String query, int topK) {
+        return retrieve(query, topK).getFormattedContext();
     }
 
     private Long parseId(String itemId) {

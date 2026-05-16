@@ -1,11 +1,14 @@
 package com.example.rag.dto;
 
+import java.util.List;
+
 public class BotMessageResponse {
     private boolean ok;
     private String channel;
     private String conversationId;
     private String mode;
     private String answer;
+    private List<SourceCitation> sources;
     private String error;
 
     public static BotMessageResponse success(String channel, String conversationId, String mode, String answer) {
@@ -15,6 +18,17 @@ public class BotMessageResponse {
         response.conversationId = conversationId;
         response.mode = mode;
         response.answer = answer;
+        return response;
+    }
+
+    public static BotMessageResponse successWithSources(String channel, String conversationId, String mode, String answer, List<SourceCitation> sources) {
+        BotMessageResponse response = new BotMessageResponse();
+        response.ok = true;
+        response.channel = channel;
+        response.conversationId = conversationId;
+        response.mode = mode;
+        response.answer = answer;
+        response.sources = sources;
         return response;
     }
 
@@ -74,5 +88,13 @@ public class BotMessageResponse {
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public List<SourceCitation> getSources() {
+        return sources;
+    }
+
+    public void setSources(List<SourceCitation> sources) {
+        this.sources = sources;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.rag.service;
 
+import com.example.rag.dto.AnswerWithSources;
 import com.example.rag.model.DocumentEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,6 +57,19 @@ public class HyperMemoryService {
             }
         }
         return answer.toString();
+    }
+
+    public AnswerWithSources queryWithSources(String question) {
+        AnswerWithSources wiki = wikiService.queryWithSources(question);
+        StringBuilder answer = new StringBuilder(wiki.getAnswer());
+        List<String> recentMessages = new ArrayList<>(conversationMemory);
+        if (!recentMessages.isEmpty()) {
+            answer.append("\n\n[Conversation Memory]\n");
+            for (String message : recentMessages) {
+                answer.append(message).append("\n");
+            }
+        }
+        return AnswerWithSources.of(answer.toString(), wiki.getSources());
     }
 
     private void trimConversationMemory() {
