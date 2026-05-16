@@ -70,6 +70,10 @@ bot:
   idempotency:
     enabled: ${BOT_IDEMPOTENCY_ENABLED:true}
     ttl-seconds: ${BOT_IDEMPOTENCY_TTL_SECONDS:600}
+  rate-limit:
+    enabled: ${BOT_RATE_LIMIT_ENABLED:true}
+    max-per-minute: ${BOT_RATE_LIMIT_MAX_PER_MINUTE:60}
+    window-seconds: ${BOT_RATE_LIMIT_WINDOW_SECONDS:60}
   channels:
     feishu:
       enabled: ${BOT_FEISHU_ENABLED:false}

@@ -53,6 +53,9 @@ Uploads accept an optional `tenantId` form field. Chat and `with-sources` JSON r
 | `BOT_WECHAT_ENABLED` | Enables the WeChat channel. |
 | `BOT_IDEMPOTENCY_ENABLED` | Enables duplicate message detection via Redis. Defaults to `true`. |
 | `BOT_IDEMPOTENCY_TTL_SECONDS` | TTL in seconds for idempotency keys. Defaults to `600`. |
+| `BOT_RATE_LIMIT_ENABLED` | Enables per-tenant+channel gateway rate limiting. Defaults to `true`. |
+| `BOT_RATE_LIMIT_MAX_PER_MINUTE` | Max requests per window per tenant+channel. Defaults to `60`. |
+| `BOT_RATE_LIMIT_WINDOW_SECONDS` | Rate limit window in seconds. Defaults to `60`. |
 
 ## Bot Gateway Smoke Test
 
@@ -71,4 +74,4 @@ curl -i http://localhost:8080/actuator/health
 - ~~Add source citations and retrieval traces in API responses.~~ Done: `AnswerWithSources` DTO returned from `/api/chat/with-sources`, `/api/wiki/chat/with-sources`, and `/api/hyper/chat/with-sources`. Bot gateway responses (`BotMessageResponse`) now include an optional `sources` list for `rag`, `wiki`, and `hyper` modes. `agent` and `gbrain` modes remain answer-only but tenant-scoped.
 - ~~Add tenant-scoped retrieval boundary.~~ Done: uploads persist `tenantId`, RAG/Wiki/Agent/GBrain/Hyper/Bot retrieval filters hydrated chunks by tenant, HyperMemory conversation memory is tenant-bucketed, and missing tenant values default to `default`.
 - Add RBAC for user-to-tenant membership and admin-only document namespace management.
-- Add gateway rate limits before exposing public Bot endpoints.
+- ~~Add gateway rate limits before exposing public Bot endpoints.~~ Done: `BotRateLimitService` enforces a fixed-window counter per `(tenantId, channel)` via Redis `INCR` + `EXPIRE`. Keys are scoped as `bot:rate-limit:<tenant>:<channel>:<bucket>` and auto-expire after the window. Excess requests receive `429 Too Many Requests`. Set `BOT_RATE_LIMIT_ENABLED=false` to disable. Fails open on Redis errors.
