@@ -19,6 +19,7 @@ HyperMemory is the final product repository, but it is not finished as a product
 | SQLite-only target is not implemented | Current stack is heavier than the desired final design. | Decide whether to migrate retrieval and memory to SQLite/SQLite-vss or keep Milvus. |
 | No source citation response model | Operators cannot audit why an answer was produced. | Return answer plus memory layer, chunk IDs, document names, and scores. |
 | `ddl-auto: update` | Schema changes are implicit. | Introduce Flyway/Liquibase migrations. |
+| Base alert rules added | Prometheus alert rules exist for HTTP errors, QA errors, latency, memory, and traffic lulls. | Wire Prometheus/Alertmanager to the rule file and tune thresholds to real traffic. |
 
 ## P2 Product Refinement
 

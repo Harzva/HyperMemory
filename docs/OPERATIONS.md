@@ -102,3 +102,27 @@ sum by (mode) (rate(campus_qa_sources_count_sum[5m]))
 - ~~Add tenant-scoped retrieval boundary.~~ Done: uploads persist `tenantId`, RAG/Wiki/Agent/GBrain/Hyper/Bot retrieval filters hydrated chunks by tenant, HyperMemory conversation memory is tenant-bucketed, and missing tenant values default to `default`.
 - Add RBAC for user-to-tenant membership and admin-only document namespace management.
 - ~~Add gateway rate limits before exposing public Bot endpoints.~~ Done: `BotRateLimitService` enforces a fixed-window counter per `(tenantId, channel)` via Redis `INCR` + `EXPIRE`. Keys are scoped as `bot:rate-limit:<tenant>:<channel>:<bucket>` and auto-expire after the window. Excess requests receive `429 Too Many Requests`. Set `BOT_RATE_LIMIT_ENABLED=false` to disable. Fails open on Redis errors.
+
+## Alert Rules
+
+Base Prometheus alert rules are provided in [`deploy/prometheus/alerts.yml`](../deploy/prometheus/alerts.yml).
+Rules are scoped with the Micrometer `application="hypermemory"` tag so they can share a Prometheus server with other services.
+
+To enable, add the file to your Prometheus configuration:
+
+```yaml
+rule_files:
+  - "deploy/prometheus/alerts.yml"
+```
+
+### Covered Alerts
+
+| Alert | Severity | Description |
+| --- | --- | --- |
+| High HTTP 5xx error rate | critical | More than 5% of HTTP requests return 5xx for 5 minutes. |
+| High QA error rate | warning | QA operation error rate exceeds 10% by mode for 5 minutes. |
+| High p95 QA latency | warning | P95 QA latency exceeds 10 seconds by mode for 5 minutes. |
+| No successful QA traffic | warning | No successful QA operations for 30 minutes. Disable for low-traffic dev environments. |
+| High JVM memory pressure | warning | JVM heap usage exceeds 85% for 10 minutes. |
+
+Thresholds are starting points. Tune them to your actual traffic patterns after initial deployment.
