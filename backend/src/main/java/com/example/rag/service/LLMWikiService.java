@@ -3,14 +3,14 @@ package com.example.rag.service;
 import com.example.rag.dto.AnswerWithSources;
 import com.example.rag.dto.SourceCitation;
 import com.example.rag.model.DocumentEntity;
+import com.example.rag.model.WikiPageEntity;
+import com.example.rag.repository.WikiPageRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-
 import java.util.Collections;
-import java.util.Map;
 import java.util.Locale;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -25,12 +25,14 @@ public class LLMWikiService {
 
     private final RetrievalContextService retrievalContextService;
     private final QaMetricsService qaMetricsService;
-    private final Map<String, Map<Long, String>> wikiPagesByTenant = new ConcurrentHashMap<>();
+    private final WikiPageRepository wikiPageRepository;
 
     public LLMWikiService(RetrievalContextService retrievalContextService,
-                          QaMetricsService qaMetricsService) {
+                          QaMetricsService qaMetricsService,
+                          WikiPageRepository wikiPageRepository) {
         this.retrievalContextService = retrievalContextService;
         this.qaMetricsService = qaMetricsService;
+        this.wikiPageRepository = wikiPageRepository;
     }
 
     public void ingest(DocumentEntity document, String content) {
@@ -49,9 +51,14 @@ public class LLMWikiService {
         } else {
             page.append("(no extractable text available)\n");
         }
-        wikiPagesByTenant
-                .computeIfAbsent(normalizeTenantId(document.getTenantId()), key -> new ConcurrentHashMap<>())
-                .put(document.getId(), page.toString());
+        String tenantId = normalizeTenantId(document.getTenantId());
+        WikiPageEntity wikiPage = wikiPageRepository.findByTenantIdAndDocumentId(tenantId, document.getId())
+                .orElseGet(WikiPageEntity::new);
+        wikiPage.setTenantId(tenantId);
+        wikiPage.setDocumentId(document.getId());
+        wikiPage.setContent(page.toString());
+        wikiPage.setUpdatedAt(LocalDateTime.now());
+        wikiPageRepository.save(wikiPage);
     }
 
     public String query(String question) {
@@ -74,13 +81,13 @@ public class LLMWikiService {
                 return AnswerWithSources.of("## Retrieved Wiki Context\n\n" + retrieval.getFormattedContext(), retrieval.getCitations());
             }
 
-            Map<Long, String> wikiPages = wikiPagesByTenant.getOrDefault(normalizedTenantId, Collections.emptyMap());
+            List<WikiPageEntity> wikiPages = wikiPageRepository.findByTenantIdOrderByUpdatedAtDesc(normalizedTenantId);
             if (wikiPages.isEmpty()) {
                 return AnswerWithSources.of("No wiki pages or retrieved context are available yet.", Collections.emptyList());
             }
 
             return AnswerWithSources.of(
-                    wikiPages.values().stream().collect(Collectors.joining("\n\n---\n\n")),
+                    wikiPages.stream().map(WikiPageEntity::getContent).collect(Collectors.joining("\n\n---\n\n")),
                     Collections.emptyList());
         });
         List<SourceCitation> sources = result.getSources();
@@ -89,12 +96,12 @@ public class LLMWikiService {
     }
 
     public int pageCount() {
-        return wikiPagesByTenant.values().stream().mapToInt(Map::size).sum();
+        return (int) wikiPageRepository.count();
     }
 
     public int totalPageCharacters() {
-        return wikiPagesByTenant.values().stream()
-                .flatMap(pages -> pages.values().stream())
+        return wikiPageRepository.findAll().stream()
+                .map(WikiPageEntity::getContent)
                 .mapToInt(String::length)
                 .sum();
     }

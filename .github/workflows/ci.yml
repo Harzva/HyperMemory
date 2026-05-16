@@ -58,11 +58,22 @@ jobs:
       - run: cp .env.example .env
       - run: docker compose config
 
+  golden:
+    name: Golden QA regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/run_golden_eval.py eval/golden/golden_cases.json
+
   docker:
     name: Docker image build
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: [frontend, backend, compose]
+    needs: [frontend, backend, compose, golden]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3

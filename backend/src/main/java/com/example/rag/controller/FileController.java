@@ -1,6 +1,7 @@
 package com.example.rag.controller;
 
 import com.example.rag.model.DocumentEntity;
+import com.example.rag.service.AccessControlService;
 import com.example.rag.service.DocumentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +18,12 @@ import java.io.IOException;
 public class FileController {
 
     private final DocumentService documentService;
+    private final AccessControlService accessControlService;
 
-    public FileController(DocumentService documentService) {
+    public FileController(DocumentService documentService,
+                          AccessControlService accessControlService) {
         this.documentService = documentService;
+        this.accessControlService = accessControlService;
     }
 
     /**
@@ -29,7 +33,7 @@ public class FileController {
     @PostMapping
     public ResponseEntity<DocumentEntity> upload(@RequestParam("file") MultipartFile file,
                                                  @RequestParam(value = "tenantId", required = false) String tenantId) throws IOException {
-        DocumentEntity saved = documentService.uploadDocument(file, tenantId);
+        DocumentEntity saved = documentService.uploadDocument(file, accessControlService.resolveTenantId(tenantId));
         return ResponseEntity.ok(saved);
     }
 }

@@ -9,6 +9,7 @@ stringData:
   SPRING_DATASOURCE_PASSWORD: replace-me
   MINIO_ROOT_PASSWORD: replace-me
   MINIO_SECRET_KEY: replace-me
+  API_AUTH_TOKENS: "admin|replace-me-admin-token|default|ADMIN,USER;user|replace-me-user-token|default|USER"
   BOT_SIGNING_SECRET: replace-me-long-random-secret
   BOT_FEISHU_VERIFICATION_TOKEN: replace-me
   BOT_FEISHU_SIGNING_SECRET: replace-me
@@ -24,7 +25,10 @@ metadata:
 data:
   SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rag?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
   SPRING_DATASOURCE_USERNAME: root
-  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+  SPRING_FLYWAY_ENABLED: "true"
+  SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+  SPRING_FLYWAY_BASELINE_VERSION: "0"
   SPRING_JPA_SHOW_SQL: "false"
   SPRING_REDIS_HOST: redis
   SPRING_REDIS_PORT: "6379"
@@ -37,6 +41,7 @@ data:
   MINIO_BUCKET: rag-bucket
   OPENAI_CHAT_MODEL: gpt-4o-mini
   OPENAI_EMBEDDING_MODEL: text-embedding-3-small
+  API_AUTH_ENABLED: "true"
   HYPERMEMORY_MAX_CONVERSATION_MESSAGES: "20"
   MANAGEMENT_HEALTH_SHOW_DETAILS: never
 ---

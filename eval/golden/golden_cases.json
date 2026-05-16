@@ -1,0 +1,41 @@
+{
+  "suite": "hypermemory-golden",
+  "allowed_modes": ["rag", "wiki", "agent", "gbrain", "hyper"],
+  "cases": [
+    {
+      "id": "rag-campus-card-replacement",
+      "mode": "rag",
+      "question": "How does a student apply for campus card replacement?",
+      "expected_keywords": ["campus card", "replacement", "student"],
+      "expected_sources": true
+    },
+    {
+      "id": "wiki-scholarship-policy",
+      "mode": "wiki",
+      "question": "Summarize the scholarship application policy from the uploaded handbook.",
+      "expected_keywords": ["scholarship", "application", "policy"],
+      "expected_sources": true
+    },
+    {
+      "id": "agent-office-routing",
+      "mode": "agent",
+      "question": "Which office should handle scholarship policy questions?",
+      "expected_keywords": ["office", "scholarship", "policy"],
+      "expected_sources": false
+    },
+    {
+      "id": "gbrain-wiki-health",
+      "mode": "gbrain",
+      "question": "Check whether the wiki memory has enough policy coverage.",
+      "expected_keywords": ["wiki", "coverage", "policy"],
+      "expected_sources": false
+    },
+    {
+      "id": "hyper-conversation-memory",
+      "mode": "hyper",
+      "question": "Remember the scholarship context and answer the next follow-up safely.",
+      "expected_keywords": ["memory", "scholarship", "context"],
+      "expected_sources": true
+    }
+  ]
+}

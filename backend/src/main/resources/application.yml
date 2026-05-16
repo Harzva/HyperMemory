@@ -4,9 +4,13 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  flyway:
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
+    baseline-on-migrate: ${SPRING_FLYWAY_BASELINE_ON_MIGRATE:true}
+    baseline-version: ${SPRING_FLYWAY_BASELINE_VERSION:0}
   jpa:
     hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
     show-sql: ${SPRING_JPA_SHOW_SQL:false}
     open-in-view: false
   redis:
@@ -35,6 +39,11 @@ openai:
   api-key: ${OPENAI_API_KEY:replace-me}
   chat-model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
   embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+
+api:
+  auth:
+    enabled: ${API_AUTH_ENABLED:true}
+    tokens: "${API_AUTH_TOKENS:admin|change-me-admin-token|default|ADMIN,USER}"
 
 server:
   port: ${SERVER_PORT:8080}

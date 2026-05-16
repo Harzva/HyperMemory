@@ -1,6 +1,7 @@
 package com.example.rag.controller;
 
 import com.example.rag.model.DocumentEntity;
+import com.example.rag.service.AccessControlService;
 import com.example.rag.service.DocumentService;
 import com.example.rag.service.LLMWikiService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,18 +24,22 @@ public class WikiFileController {
 
     private final DocumentService documentService;
     private final LLMWikiService llmWikiService;
+    private final AccessControlService accessControlService;
 
     @Autowired
     public WikiFileController(DocumentService documentService,
-                              LLMWikiService llmWikiService) {
+                              LLMWikiService llmWikiService,
+                              AccessControlService accessControlService) {
         this.documentService = documentService;
         this.llmWikiService = llmWikiService;
+        this.accessControlService = accessControlService;
     }
 
     @PostMapping("/upload")
     public ResponseEntity<DocumentEntity> uploadToWiki(@RequestParam("file") MultipartFile file,
                                                        @RequestParam(value = "tenantId", required = false) String tenantId) throws IOException {
-        DocumentEntity entity = documentService.uploadDocument(file, tenantId);
+        String resolvedTenantId = accessControlService.resolveTenantId(tenantId);
+        DocumentEntity entity = documentService.uploadDocument(file, resolvedTenantId);
 
         String content;
         try {

@@ -1,6 +1,7 @@
 package com.example.rag.controller;
 
 import com.example.rag.dto.ChatRequest;
+import com.example.rag.service.AccessControlService;
 import com.example.rag.service.AgentService;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -19,14 +20,18 @@ import reactor.core.publisher.Flux;
 public class AgentChatController {
 
     private final AgentService agentService;
+    private final AccessControlService accessControlService;
 
-    public AgentChatController(AgentService agentService) {
+    public AgentChatController(AgentService agentService,
+                               AccessControlService accessControlService) {
         this.agentService = agentService;
+        this.accessControlService = accessControlService;
     }
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<Flux<String>> chat(@Valid @RequestBody ChatRequest request) {
-        String result = agentService.ask(request.getUserInput(), request.getTenantId());
+        String tenantId = accessControlService.resolveTenantId(request.getTenantId());
+        String result = agentService.ask(request.getUserInput(), tenantId);
         return ResponseEntity.ok(Flux.just(result));
     }
 }

@@ -1,9 +1,12 @@
 package com.example.rag.service;
 
+import com.example.rag.model.GBrainSkillRunEntity;
+import com.example.rag.repository.GBrainSkillRunRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -18,15 +21,18 @@ public class GBrainService {
 
     private final LLMWikiService wikiService;
     private final QaMetricsService qaMetricsService;
+    private final GBrainSkillRunRepository skillRunRepository;
     private final List<String> skillNames = List.of(
             "WikiCoverageSnapshot",
             "MemoryIndexHealthCheck"
     );
 
     public GBrainService(LLMWikiService wikiService,
-                         QaMetricsService qaMetricsService) {
+                         QaMetricsService qaMetricsService,
+                         GBrainSkillRunRepository skillRunRepository) {
         this.wikiService = wikiService;
         this.qaMetricsService = qaMetricsService;
+        this.skillRunRepository = skillRunRepository;
     }
 
     public String ask(String question) {
@@ -39,13 +45,25 @@ public class GBrainService {
     }
 
     public void runAllSkills() {
-        log.info("Wiki coverage: {} pages, {} characters",
-                wikiService.pageCount(),
-                wikiService.totalPageCharacters());
+        int pageCount = wikiService.pageCount();
+        int totalCharacters = wikiService.totalPageCharacters();
+        log.info("Wiki coverage: {} pages, {} characters", pageCount, totalCharacters);
+        recordSkillRun("WikiCoverageSnapshot", "SUCCESS", "pages=" + pageCount + ", characters=" + totalCharacters);
         log.info("Memory index health check completed");
+        recordSkillRun("MemoryIndexHealthCheck", "SUCCESS", "wiki_pages=" + pageCount);
     }
 
     public List<String> getSkillNames() {
         return skillNames;
+    }
+
+    private void recordSkillRun(String skillName, String status, String details) {
+        GBrainSkillRunEntity run = new GBrainSkillRunEntity();
+        run.setTenantId("default");
+        run.setSkillName(skillName);
+        run.setStatus(status);
+        run.setDetails(details);
+        run.setCreatedAt(LocalDateTime.now());
+        skillRunRepository.save(run);
     }
 }

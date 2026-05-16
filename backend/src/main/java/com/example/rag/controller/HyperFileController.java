@@ -1,6 +1,7 @@
 package com.example.rag.controller;
 
 import com.example.rag.model.DocumentEntity;
+import com.example.rag.service.AccessControlService;
 import com.example.rag.service.DocumentService;
 import com.example.rag.service.HyperMemoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,12 +30,15 @@ public class HyperFileController {
 
     private final DocumentService documentService;
     private final HyperMemoryService hyperMemoryService;
+    private final AccessControlService accessControlService;
 
     @Autowired
     public HyperFileController(DocumentService documentService,
-                                HyperMemoryService hyperMemoryService) {
+                               HyperMemoryService hyperMemoryService,
+                               AccessControlService accessControlService) {
         this.documentService = documentService;
         this.hyperMemoryService = hyperMemoryService;
+        this.accessControlService = accessControlService;
     }
 
     /**
@@ -51,7 +55,8 @@ public class HyperFileController {
     @PostMapping("/upload")
     public ResponseEntity<DocumentEntity> uploadToHyper(@RequestParam("file") MultipartFile file,
                                                         @RequestParam(value = "tenantId", required = false) String tenantId) throws IOException {
-        DocumentEntity entity = documentService.uploadDocument(file, tenantId);
+        String resolvedTenantId = accessControlService.resolveTenantId(tenantId);
+        DocumentEntity entity = documentService.uploadDocument(file, resolvedTenantId);
         String content;
         try {
             content = new String(file.getBytes(), StandardCharsets.UTF_8);

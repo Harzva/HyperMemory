@@ -1,37 +1,29 @@
-# Remaining Production Gaps
+# Production Readiness Status
 
-HyperMemory is the final product repository, but it is not finished as a production-grade memory system until the following gaps are closed.
+HyperMemory is the final product repository. It now has the minimum closure needed for a controlled staging-to-production path.
 
-## P0 Before Real Users
+## Closed Minimum Gates
 
-| Gap | Impact | Recommended fix |
-| --- | --- | --- |
-| No user authentication | Anyone reaching the API can upload, query, or run memory modes. | Add OAuth/OIDC or gateway auth before public exposure. |
-| No tenant-scoped document isolation | Knowledge, memory, and Bot conversations can mix across organizations. | Add `tenantId` to documents, chunks, memory records, conversations, and retrieval filters. |
-| HyperMemory is in memory | Restart loses important memory context. | Persist memory records in SQLite or MySQL with explicit lifecycle rules. |
-| No Bot idempotency store | Platform retries can trigger duplicate memory/model calls. | Store `(channel, messageId)` in Redis or MySQL with TTL. |
+| Gate | Status |
+| --- | --- |
+| API authentication and RBAC | Closed with token-based `USER`/`ADMIN` roles, tenant-bound access checks, and admin-only GBrain skill execution. Replace with OIDC before broad public use. |
+| Tenant isolation | Closed for document upload, RAG retrieval, Wiki lookup, Agent/GBrain execution, HyperMemory records, and Bot dispatch through normalized `tenantId`. |
+| Durable Wiki/GBrain/Hyper state | Closed through `wiki_pages`, `gbrain_skill_runs`, and `hyper_memory_records` JPA persistence. |
+| Schema migration | Closed with Flyway baseline migration and `ddl-auto=validate`. |
+| Golden QA in CI | Closed with offline golden suite validation in the CI workflow. |
+| Bot idempotency and rate limit | Closed with Redis-backed duplicate suppression and fixed-window throttling. |
+| Staging backup/restore and alert drill | Closed through `docs/STAGING-RUNBOOK.md` and `scripts/staging_drill.sh`. |
 
-## P1 Architectural Hardening
+## Still Intentional Post-MVP Work
 
-| Gap | Impact | Recommended fix |
-| --- | --- | --- |
-| HyperMemory lacks durable memory semantics | The final memory layer still behaves like an in-process aggregation demo. | Define explicit memory records, retention rules, and retrieval traces. |
-| SQLite-only target is not implemented | Current stack is heavier than the desired final design. | Decide whether to migrate retrieval and memory to SQLite/SQLite-vss or keep Milvus. |
-| No source citation response model | Operators cannot audit why an answer was produced. | Return answer plus memory layer, chunk IDs, document names, and scores. |
-| `ddl-auto: update` | Schema changes are implicit. | Introduce Flyway/Liquibase migrations. |
-| Base alert rules added | Prometheus alert rules exist for HTTP errors, QA errors, latency, memory, and traffic lulls. | Wire Prometheus/Alertmanager to the rule file and tune thresholds to real traffic. |
+| Item | Why it remains |
+| --- | --- |
+| OAuth/OIDC login | Token RBAC is enough for a deployment gate, but not the final user identity system. |
+| SQLite-only target | Current deployment remains MySQL/Milvus/MinIO; moving to SQLite/SQLite-vss is a separate product decision. |
+| Memory retention governance | Bounded conversation retention exists; export, deletion, and summarization policy can follow. |
+| Rich document parsing and reranking | Retrieval is stable enough for staging; quality work remains separate. |
+| Operator console | Operations are documented through scripts and metrics; a dashboard can come later. |
 
-## P2 Product Refinement
+## Maintenance Boundary
 
-| Gap | Impact | Recommended fix |
-| --- | --- | --- |
-| No memory evaluation set | Memory changes can silently regress. | Add golden multi-turn campus QA cases. |
-| No retention policy | Long-term memory can grow without governance. | Add TTL, summarization, deletion, and export policies. |
-| No admin console | Operators cannot inspect memory health. | Add an authenticated operator dashboard later. |
-
-## Maintenance Focus
-
-- Keep this repo as the final system, not another collection of versions.
-- Remove duplicate memory abstractions when they stop adding real behavior.
-- Update README screenshots whenever the workbench UI or mode list changes.
-- Run `mvn -B test`, `npm run build`, and `npm audit --audit-level=moderate` before releases.
+Keep this repo as the final system, not another collection of versions. Remove duplicate memory abstractions when they stop adding real behavior.

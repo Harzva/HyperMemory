@@ -1,5 +1,6 @@
 package com.example.rag.controller;
 
+import com.example.rag.service.AccessControlService;
 import com.example.rag.service.GBrainService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,9 +21,12 @@ import java.util.List;
 public class GBrainSkillController {
 
     private final GBrainService gBrainService;
+    private final AccessControlService accessControlService;
 
-    public GBrainSkillController(GBrainService gBrainService) {
+    public GBrainSkillController(GBrainService gBrainService,
+                                 AccessControlService accessControlService) {
         this.gBrainService = gBrainService;
+        this.accessControlService = accessControlService;
     }
 
     /**
@@ -40,6 +44,7 @@ public class GBrainSkillController {
      */
     @PostMapping("/run-all")
     public ResponseEntity<Void> runAllSkills() {
+        accessControlService.requireAdmin();
         gBrainService.runAllSkills();
         return ResponseEntity.noContent().build();
     }

@@ -14,7 +14,7 @@ Open:
 - Backend metrics: `http://localhost:8080/actuator/prometheus`
 - MinIO console: `http://localhost:9001`
 
-Set `OPENAI_API_KEY` in `.env` before using model-backed chat.
+Set `OPENAI_API_KEY` and rotate `API_AUTH_TOKENS` in `.env` before using model-backed chat.
 
 ## Modes
 
@@ -32,7 +32,7 @@ Set `OPENAI_API_KEY` in `.env` before using model-backed chat.
 
 ## Tenant Scoping
 
-Uploads accept an optional `tenantId` form field. Chat and `with-sources` JSON requests accept an optional `tenantId` body field. Missing values are normalized to `default`; retrieval, wiki fallback pages, and HyperMemory conversation memory are scoped by tenant.
+Uploads accept an optional `tenantId` form field. Chat and `with-sources` JSON requests accept an optional `tenantId` body field. Missing values are normalized to `default`; retrieval, wiki fallback pages, GBrain runs, and HyperMemory conversation memory are scoped by tenant. API tokens bind non-admin callers to their configured tenant, while `ADMIN` tokens can operate across tenants and run protected skill jobs.
 
 ## Runtime Configuration
 
@@ -44,8 +44,14 @@ Uploads accept an optional `tenantId` form field. Chat and `with-sources` JSON r
 | `FRONTEND_PORT` | Browser-facing frontend port. |
 | `BACKEND_PORT` | Browser/API-facing backend port. |
 | `MYSQL_ROOT_PASSWORD` | Local MySQL root password. |
+| `SPRING_FLYWAY_ENABLED` | Enables Flyway schema migration. Defaults to `true`. |
+| `SPRING_FLYWAY_BASELINE_ON_MIGRATE` | Allows Flyway to baseline an existing non-empty schema during first migration adoption. |
+| `SPRING_FLYWAY_BASELINE_VERSION` | Baseline version for existing schemas. Defaults to `0` so V1 still runs. |
+| `SPRING_JPA_HIBERNATE_DDL_AUTO` | Schema validation mode. Production default is `validate`; Flyway owns changes. |
 | `MINIO_ROOT_USER` | Local MinIO username. |
 | `MINIO_ROOT_PASSWORD` | Local MinIO password. |
+| `API_AUTH_ENABLED` | Enables API token authentication for non-public API routes. Defaults to `true`. |
+| `API_AUTH_TOKENS` | Semicolon-separated token specs: `name|token|tenant|ROLE,ROLE`. |
 | `BOT_ENABLED` | Enables the Bot gateway. Defaults to `false`. |
 | `BOT_SIGNING_SECRET` | Internal HMAC secret for normalized Bot callbacks. |
 | `BOT_FEISHU_ENABLED` | Enables the Feishu channel. |
@@ -63,6 +69,10 @@ See [Bot Integration Guide](BOT-INTEGRATION.md) for signed requests. A valid cal
 
 ```bash
 curl -i http://localhost:8080/actuator/health
+curl -i -X POST http://localhost:8080/api/hyper/chat \
+  -H "X-API-Token: change-me-user-token" \
+  -H "Content-Type: application/json" \
+  -d '{"conversationId":"default","userInput":"hello"}'
 ```
 
 ## Business Metrics
@@ -95,12 +105,15 @@ sum by (mode) (rate(campus_qa_sources_count_sum[5m]))
 ## Production Checklist
 
 - Keep HyperMemory as the single final memory aggregation layer.
-- Replace in-memory wiki and hyper state with durable persistence.
+- ~~Replace in-memory wiki and hyper state with durable persistence.~~ Done: wiki pages, GBrain skill runs, and HyperMemory records are persisted through JPA repositories.
 - Decide whether the final runtime should stay on MySQL/Milvus/MinIO or move to SQLite-only retrieval.
 - ~~Add idempotency storage for Bot message IDs before enabling platform retries.~~ Done: `BotIdempotencyService` acquires a Redis `SETNX` key by `(tenantId, channel, messageId)` before dispatch. Concurrent duplicates are ignored, successful messages keep the key until TTL expiry, and processing exceptions release the key so platform retries can run again. Missing `tenantId` defaults to `"default"`. Set `BOT_IDEMPOTENCY_ENABLED=false` to disable.
 - ~~Add source citations and retrieval traces in API responses.~~ Done: `AnswerWithSources` DTO returned from `/api/chat/with-sources`, `/api/wiki/chat/with-sources`, and `/api/hyper/chat/with-sources`. Bot gateway responses (`BotMessageResponse`) now include an optional `sources` list for `rag`, `wiki`, and `hyper` modes. `agent` and `gbrain` modes remain answer-only but tenant-scoped.
 - ~~Add tenant-scoped retrieval boundary.~~ Done: uploads persist `tenantId`, RAG/Wiki/Agent/GBrain/Hyper/Bot retrieval filters hydrated chunks by tenant, HyperMemory conversation memory is tenant-bucketed, and missing tenant values default to `default`.
-- Add RBAC for user-to-tenant membership and admin-only document namespace management.
+- ~~Add RBAC for user-to-tenant membership and admin-only document namespace management.~~ Done: `ApiAuthFilter` accepts `Authorization: Bearer` or `X-API-Token`, and `AccessControlService` enforces token-bound tenant access plus `ADMIN` checks.
+- ~~Replace implicit schema updates.~~ Done: Flyway baseline migration is enabled and JPA defaults to `validate`.
+- ~~Add golden QA regression set to CI.~~ Done: `eval/golden/golden_cases.json` is validated by the `Golden QA regression` workflow job.
+- ~~Document staging backup/restore and alert drill.~~ Done: see [Staging Runbook](STAGING-RUNBOOK.md) and `scripts/staging_drill.sh`.
 - ~~Add gateway rate limits before exposing public Bot endpoints.~~ Done: `BotRateLimitService` enforces a fixed-window counter per `(tenantId, channel)` via Redis `INCR` + `EXPIRE`. Keys are scoped as `bot:rate-limit:<tenant>:<channel>:<bucket>` and auto-expire after the window. Excess requests receive `429 Too Many Requests`. Set `BOT_RATE_LIMIT_ENABLED=false` to disable. Fails open on Redis errors.
 
 ## Alert Rules
