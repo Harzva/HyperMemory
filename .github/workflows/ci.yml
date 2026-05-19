@@ -76,6 +76,6 @@ jobs:
     needs: [frontend, backend, compose, golden]
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - run: docker build --pull -t hypermemory-backend:${{ github.sha }} ./backend
       - run: docker build --pull -t hypermemory-frontend:${{ github.sha }} ./frontend
